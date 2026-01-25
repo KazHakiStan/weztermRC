@@ -2,8 +2,10 @@ local wezterm = require("wezterm")
 local constants = require("constants")
 local config = wezterm.config_builder()
 
+config.default_prog = constants.default_prog
+
 config.leader = {
-	key = "w",
+	key = "q",
 	mods = "CTRL",
 	timeout_milliseconds = 2000,
 }
@@ -15,66 +17,66 @@ config.line_height = 1.2
 
 --- colors
 config.colors = {
-	foreground = "#ebdbb2",
-  background = "#282828",
-  
-  cursor_bg = "#ebdbb2",
-  cursor_fg = "#282828",
-  cursor_border = "#ebdbb2",
-  
-  selection_fg = "#282828",
-  selection_bg = "#d79921",
-  
-  scrollbar_thumb = "#665c54",
-  
-  split = "#665c54",
-  
-  ansi = {
-    "#282828",  -- black
-    "#cc241d",  -- red
-    "#98971a",  -- green
-    "#d79921",  -- yellow
-    "#458588",  -- blue
-    "#b16286",  -- magenta
-    "#689d6a",  -- cyan
-    "#a89984"   -- white
-  },
-  
-  brights = {
-    "#928374",  -- black
-    "#fb4934",  -- red
-    "#b8bb26",  -- green
-    "#fabd2f",  -- yellow
-    "#83a598",  -- blue
-    "#d3869b",  -- magenta
-    "#8ec07c",  -- cyan
-    "#ebdbb2"   -- white
-  },
-  
-  -- Optional: Tab bar colors
-  tab_bar = {
+    foreground = "#ebdbb2",
     background = "#282828",
-    active_tab = {
-      bg_color = "#504945",
-      fg_color = "#ebdbb2",
+
+    cursor_bg = "#ebdbb2",
+    cursor_fg = "#282828",
+    cursor_border = "#ebdbb2",
+
+    selection_fg = "#282828",
+    selection_bg = "#d79921",
+
+    scrollbar_thumb = "#665c54",
+
+    split = "#665c54",
+
+    ansi = {
+        "#282828",  -- black
+        "#cc241d",  -- red
+        "#98971a",  -- green
+        "#d79921",  -- yellow
+        "#458588",  -- blue
+        "#b16286",  -- magenta
+        "#689d6a",  -- cyan
+        "#a89984"   -- white
     },
-    inactive_tab = {
-      bg_color = "#3c3836",
-      fg_color = "#a89984",
+
+    brights = {
+        "#928374",  -- black
+        "#fb4934",  -- red
+        "#b8bb26",  -- green
+        "#fabd2f",  -- yellow
+        "#83a598",  -- blue
+        "#d3869b",  -- magenta
+        "#8ec07c",  -- cyan
+        "#ebdbb2"   -- white
     },
-    inactive_tab_hover = {
-      bg_color = "#504945",
-      fg_color = "#ebdbb2",
+
+    -- Optional: Tab bar colors
+    tab_bar = {
+        background = "#282828",
+        active_tab = {
+            bg_color = "#504945",
+            fg_color = "#ebdbb2",
+        },
+        inactive_tab = {
+            bg_color = "#3c3836",
+            fg_color = "#a89984",
+        },
+        inactive_tab_hover = {
+            bg_color = "#504945",
+            fg_color = "#ebdbb2",
+        },
+        new_tab = {
+            bg_color = "#282828",
+            fg_color = "#a89984",
+        },
+        new_tab_hover = {
+            bg_color = "#504945",
+            fg_color = "#ebdbb2",
+        },
     },
-    new_tab = {
-      bg_color = "#282828",
-      fg_color = "#a89984",
-    },
-    new_tab_hover = {
-      bg_color = "#504945",
-      fg_color = "#ebdbb2",
-    },
-  },
 }
 
 --- appearance
@@ -174,9 +176,9 @@ config.background = {
     },
     {
         source = {
-            File = constants.bg_pic,
+            File = constants.paths.bg_image,
         },
-        opacity = 0.2,
+        opacity = 0.4,
     },
 }
 
