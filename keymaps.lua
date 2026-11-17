@@ -24,7 +24,7 @@ function M.keys()
         {
             mods = "LEADER",
             key = "t",
-            desc = "Cycle theme (ashen → aegis-lavender → light), synced with nvim",
+            desc = "Cycle theme (ashen → aegis-lavender → aegis-gold → light), synced with nvim",
             action = wezterm.action_callback(function(window, _pane)
                 toggle_theme(window)
             end),

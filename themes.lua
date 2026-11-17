@@ -1,7 +1,7 @@
 local M = {}
 
 -- order for LEADER t; names must match nvim's lua/kazhakistan/theme.lua
-M.order = { "ashen", "aegis-lavender", "light" }
+M.order = { "ashen", "aegis-lavender", "aegis-gold", "light" }
 M.default = "ashen"
 
 -- Dark themes built on the ashen layout: grayscale base + accent set.
@@ -100,6 +100,20 @@ M.themes = {
         split         = "#6c3c84",
         active_tab    = "#3cf0f0",
         shimmer       = { "#b98af0", "#3cf0f0" }, -- lavender swept by cyan
+    }),
+    -- Metaphor-like: black, amber gold and parchment (assets/aegis-gold.png)
+    ["aegis-gold"] = ashen_like({
+        pics          = "aegis-gold*",
+        accent        = "#d4a13f", -- amber gold
+        accent_bright = "#f0d58a", -- light gold
+        glow          = "#f2e6c4", -- parchment
+        smolder       = "#e0a040", -- amber
+        blue          = "#5f9e8f", -- jade, the one cool contrast
+        cursor        = "#f0d58a",
+        selection     = "#5a4520", -- dark bronze
+        split         = "#7a5a24",
+        active_tab    = "#f2e6c4",
+        shimmer       = { "#d4a13f", "#fff3d0" }, -- gold catching the light
     }),
     dark2 = {
         colors = {
