@@ -18,7 +18,9 @@ config.leader = {
 
 -- font
 config.font_size = 12
-config.font = wezterm.font("JetBrains Mono")
+-- KazGlyphs (fonts/, built by fonts/src/build_glyphs.py): custom status glyphs
+config.font_dirs = { constants.join(wezterm.config_dir, "fonts") }
+config.font = wezterm.font_with_fallback({ "JetBrains Mono", "KazGlyphs" })
 config.line_height = 1.2
 
 --- appearance

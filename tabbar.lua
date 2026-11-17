@@ -8,25 +8,90 @@ local wezterm = require("wezterm")
 
 local M = {}
 
--- proto-agent: ui/activity.py
-local FRAMES = { "·", "✢", "✳", "✶", "✻", "✽", "✻", "✶", "✳", "✢" }
 local SHIMMER_WIDTH = 3.5  -- half-width of the band in characters
 
--- proto-agent: config.py DEFAULT_SPINNER_WORDS
+local function nf(name)
+    local ok, glyph = pcall(function() return wezterm.nerdfonts[name] end)
+    return ok and glyph or ""
+end
+
+local function nfs(names)
+    local out = {}
+    for i, n in ipairs(names) do out[i] = nf(n) end
+    return out
+end
+
+-- KazGlyphs (fonts/KazGlyphs.ttf): spinning tarot card, U+100000..U+10000B
+local CARD = {}
+for i = 0, 11 do CARD[#CARD + 1] = utf8.char(0x100000 + i) end
+
+-- Spinner phrases from proto-agent (config.py DEFAULT_SPINNER_WORDS), grouped by
+-- source so each group gets a glyph that fits it. frames: animation; hold: ticks
+-- per frame; rest: the glyph shown when animations are off.
 local FEATURED = "Prototyping"
-local WORDS = {
-    "Burning hard", "Juicing", "Protomoleculizing",
-    "Calibrating", "Relay-jumping", "Omni-tooling", "Biotic-charging", "Planet-probing", "Paragoning",
-    "Renegading", "Indoctrinating",
-    "Netrunning", "Jacking in", "Quickhacking", "Breaching protocol", "Braindancing", "Overclocking",
-    "Sandevistaning", "Chroming up",
-    "Polymerizing", "Kollektiv-syncing", "Neuro-linking",
-    "Evoking", "Tartarus-climbing", "Dark-Houring", "TV-diving", "Midnight-channeling", "Social-linking",
-    "Fusing personas", "Infiltrating palaces", "Calling-carding", "Baton-passing", "All-out-attacking",
-    "Showtiming",
-    "Press-turning", "Magatsuhi-surging", "Smirking", "Demon-negotiating", "Essence-fusing",
-    "Nahobino-merging", "Miman-hunting", "Da'at-wandering",
+local GROUPS = {
+    proto = { -- proto-agent's own spinner (ui/activity.py)
+        frames = { "·", "✢", "✳", "✶", "✻", "✽", "✻", "✶", "✳", "✢" }, hold = 1, rest = "✻",
+        words = { FEATURED },
+    },
+    p3 = { -- Dark Hour: the moon waxes to full and wanes
+        frames = nfs({ "md_moon_new", "md_moon_waxing_crescent", "md_moon_first_quarter",
+            "md_moon_waxing_gibbous", "md_moon_full", "md_moon_waning_gibbous",
+            "md_moon_last_quarter", "md_moon_waning_crescent" }),
+        hold = 2, rest = nf("md_moon_full"),
+        words = { "Evoking", "Tartarus-climbing", "Dark-Houring" },
+    },
+    p4 = { -- Midnight Channel: a flickering TV
+        frames = nfs({ "md_television_classic", "md_television_classic_off" }),
+        hold = 3, rest = nf("md_television_classic"),
+        words = { "TV-diving", "Midnight-channeling" },
+    },
+    p5 = { -- calling card
+        frames = CARD, hold = 1, rest = CARD[1],
+        words = { "Infiltrating palaces", "Calling-carding", "Baton-passing", "All-out-attacking",
+            "Showtiming" },
+    },
+    persona = { -- Philemon's butterfly
+        frames = nfs({ "md_butterfly_outline", "md_butterfly" }), hold = 3, rest = nf("md_butterfly"),
+        words = { "Social-linking", "Fusing personas" },
+    },
+    smt = { -- Magatsuhi flare
+        frames = nfs({ "md_star_four_points_outline", "md_star_four_points" }),
+        hold = 3, rest = nf("md_star_four_points"),
+        words = { "Press-turning", "Magatsuhi-surging", "Smirking", "Demon-negotiating",
+            "Essence-fusing", "Nahobino-merging", "Miman-hunting", "Da'at-wandering" },
+    },
+    mass_effect = { -- mass relay rings
+        frames = { "◐", "◓", "◑", "◒" }, hold = 2, rest = "◐",
+        words = { "Calibrating", "Relay-jumping", "Omni-tooling", "Biotic-charging", "Planet-probing",
+            "Paragoning", "Renegading", "Indoctrinating" },
+    },
+    cyberpunk = { -- glitching pixel
+        frames = { "▖", "▘", "▝", "▗" }, hold = 1, rest = "▘",
+        words = { "Netrunning", "Jacking in", "Quickhacking", "Breaching protocol", "Braindancing",
+            "Overclocking", "Sandevistaning", "Chroming up" },
+    },
+    expanse = { -- Epstein drive burn
+        frames = nfs({ "md_rocket_launch_outline", "md_rocket_launch" }),
+        hold = 3, rest = nf("md_rocket_launch"),
+        words = { "Burning hard", "Juicing", "Protomoleculizing" },
+    },
+    atomic_heart = { -- polymer drop
+        frames = nfs({ "md_water_outline", "md_water" }), hold = 3, rest = nf("md_water"),
+        words = { "Polymerizing", "Kollektiv-syncing", "Neuro-linking" },
+    },
 }
+
+-- flat word list (featured excluded: it has its own odds) and word -> group
+local WORDS, GROUP_OF = {}, {}
+for _, name in ipairs({ "expanse", "mass_effect", "cyberpunk", "atomic_heart", "p3", "p4", "p5",
+    "persona", "smt", "proto" }) do
+    for _, w in ipairs(GROUPS[name].words) do
+        GROUP_OF[w] = GROUPS[name]
+        if w ~= FEATURED then WORDS[#WORDS + 1] = w end
+    end
+end
+
 local WORD_SECONDS = 2 * 60 -- a new word every 2 minutes
 
 -- All animation advances in ticks of FAST_MS: one spinner frame, one shimmer
@@ -121,11 +186,6 @@ local function pick_word(seed, period)
         w = WORDS[(x // 7) % #WORDS + 1]
     end
     return w
-end
-
-local function nf(name)
-    local ok, glyph = pcall(function() return wezterm.nerdfonts[name] end)
-    return ok and glyph or ""
 end
 
 -- fit into `width` cells, marking the cut with an ellipsis
@@ -279,7 +339,8 @@ function M.apply(config, theme, state)
         elseif state.activity ~= "off" then
             local elapsed = os.time() - wezterm.GLOBAL.session_start
             local word = pick_word(wezterm.GLOBAL.session_start, elapsed // WORD_SECONDS)
-            local frame = animate and FRAMES[k % #FRAMES + 1] or "✻"
+            local g = GROUP_OF[word] or GROUPS.proto
+            local frame = animate and g.frames[(k // g.hold) % #g.frames + 1] or g.rest
             table.insert(left, { Foreground = { Color = ui.shimmer[1] } })
             table.insert(left, { Text = " " .. frame .. " " })
             for _, it in ipairs(shimmer(word .. "…", ui.shimmer[1], ui.shimmer[2], k, animate)) do
