@@ -1,0 +1,338 @@
+-- Bottom bar: custom tab titles, activity line (left), cwd + clock (right).
+--   LEADER ,   rename tab (empty input = automatic name)
+--   LEADER s   activity element: full -> compact (no time) -> off
+--   LEADER a   toggle animations (persisted in state.json)
+-- Activity line follows proto-agent's ui/activity.py: glyph, shimmering word, elapsed time.
+
+local wezterm = require("wezterm")
+
+local M = {}
+
+-- proto-agent: ui/activity.py
+local FRAMES = { "·", "✢", "✳", "✶", "✻", "✽", "✻", "✶", "✳", "✢" }
+local SHIMMER_WIDTH = 3.5  -- half-width of the band in characters
+
+-- proto-agent: config.py DEFAULT_SPINNER_WORDS
+local FEATURED = "Prototyping"
+local WORDS = {
+    "Burning hard", "Juicing", "Protomoleculizing",
+    "Calibrating", "Relay-jumping", "Omni-tooling", "Biotic-charging", "Planet-probing", "Paragoning",
+    "Renegading", "Indoctrinating",
+    "Netrunning", "Jacking in", "Quickhacking", "Breaching protocol", "Braindancing", "Overclocking",
+    "Sandevistaning", "Chroming up",
+    "Polymerizing", "Kollektiv-syncing", "Neuro-linking",
+    "Evoking", "Tartarus-climbing", "Dark-Houring", "TV-diving", "Midnight-channeling", "Social-linking",
+    "Fusing personas", "Infiltrating palaces", "Calling-carding", "Baton-passing", "All-out-attacking",
+    "Showtiming",
+    "Press-turning", "Magatsuhi-surging", "Smirking", "Demon-negotiating", "Essence-fusing",
+    "Nahobino-merging", "Miman-hunting", "Da'at-wandering",
+}
+local WORD_SECONDS = 2 * 60 -- a new word every 2 minutes
+
+-- All animation advances in ticks of FAST_MS: one spinner frame, one shimmer
+-- character and one marquee character per tick, so nothing skips or jumps.
+-- (measured: 120ms ~ +4.7% of a core, 200ms ~ +2.2%)
+local FAST_MS = 200   -- status refresh with animations
+local SLOW_MS = 1000  -- without: enough for the clock and cwd
+local DIR_MAX = 30    -- visible characters of the directory
+local MARQUEE_PAUSE = math.ceil(1500 / FAST_MS) -- ticks to rest at each end
+
+---------------------------------------------------------------- helpers
+
+-- tick counter from wall time (os.clock is CPU time, not wall time), so the
+-- phase is consistent across windows and survives config reloads
+local function tick()
+    local t = tonumber(wezterm.time.now():format("%s%.3f")) or os.time()
+    return math.floor(t * 1000 / FAST_MS)
+end
+
+local function chars(s)
+    local out = {}
+    for _, c in utf8.codes(s) do
+        out[#out + 1] = utf8.char(c)
+    end
+    return out
+end
+
+local function rgb(hex)
+    hex = hex:gsub("#", "")
+    return tonumber(hex:sub(1, 2), 16), tonumber(hex:sub(3, 4), 16), tonumber(hex:sub(5, 6), 16)
+end
+
+local function mix(a, b, t)
+    t = math.max(0, math.min(1, t))
+    local r1, g1, b1 = rgb(a)
+    local r2, g2, b2 = rgb(b)
+    return string.format("#%02x%02x%02x",
+        math.floor(r1 + (r2 - r1) * t + 0.5),
+        math.floor(g1 + (g2 - g1) * t + 0.5),
+        math.floor(b1 + (b2 - b1) * t + 0.5))
+end
+
+-- proto-agent shimmer: a soft light band travels across the text and a bit beyond
+-- (one character per tick: a 15-char word takes ~4.4s at 200ms)
+local function shimmer(text, base, hi, k, animate)
+    local cs = chars(text)
+    if not animate then
+        return { { Foreground = { Color = base } }, { Text = text } }
+    end
+    local n = #cs
+    local span = math.ceil(n + 2 * SHIMMER_WIDTH)
+    local center = (k % span) - SHIMMER_WIDTH
+    local items = {}
+    for i, ch in ipairs(cs) do
+        local d = math.min(1, math.abs((i - 1) - center) / SHIMMER_WIDTH)
+        items[#items + 1] = { Foreground = { Color = mix(base, hi, 0.5 * (1 + math.cos(math.pi * d))) } }
+        items[#items + 1] = { Text = ch }
+    end
+    return items
+end
+
+local function format_elapsed(s)
+    s = math.max(0, math.floor(s))
+    if s < 60 then return s .. "с" end
+    local m = s // 60
+    s = s % 60
+    if m < 60 then return string.format("%dм %02dс", m, s) end
+    return string.format("%dч %02dм", m // 60, m % 60)
+end
+
+local function hash(seed, period)
+    local x = seed ~ (period * 2654435761)
+    x = ((x ~ (x >> 16)) * 0x45d9f3b) & 0xffffffff
+    x = ((x ~ (x >> 16)) * 0x45d9f3b) & 0xffffffff
+    return x ~ (x >> 16)
+end
+
+-- stable pseudo-random word per period (survives config reloads):
+-- featured word ~1 in 5 periods, never the same word twice in a row
+local function raw_word(seed, period)
+    local x = hash(seed, period)
+    if x % 5 == 0 then
+        return FEATURED
+    end
+    return WORDS[(x // 5) % #WORDS + 1]
+end
+
+local function pick_word(seed, period)
+    local w = raw_word(seed, period)
+    if period > 0 and w == raw_word(seed, period - 1) then
+        local x = hash(seed, period)
+        w = WORDS[(x // 7) % #WORDS + 1]
+    end
+    return w
+end
+
+local function nf(name)
+    local ok, glyph = pcall(function() return wezterm.nerdfonts[name] end)
+    return ok and glyph or ""
+end
+
+-- fit into `width` cells, marking the cut with an ellipsis
+local function fit(text, width)
+    if wezterm.column_width(text) <= width then return text end
+    return wezterm.truncate_right(text, math.max(0, width - 1)) .. "…"
+end
+
+local SHELLS = { zsh = true, bash = true, fish = true, pwsh = true, powershell = true, cmd = true }
+
+local function basename(path)
+    if not path or path == "" then return "" end
+    path = path:gsub("[/\\]+$", "")
+    return path:match("([^/\\]+)$") or path
+end
+
+local function process_name(pane)
+    local name = basename(pane.foreground_process_name or "")
+    return (name:gsub("%.exe$", ""))
+end
+
+local function url_path(u)
+    if not u then return nil end
+    local p = (type(u) == "userdata" and u.file_path) or tostring(u):gsub("^file://[^/]*", "")
+    return (p:gsub("^/(%a:)", "%1")) -- "/C:/Users" -> "C:/Users"
+end
+
+---------------------------------------------------------------- directory
+
+local function home_relative(p)
+    local home = wezterm.home_dir:gsub("\\", "/")
+    p = p:gsub("\\", "/")
+    if p:sub(1, #home):lower() == home:lower() then
+        p = "~" .. p:sub(#home + 1)
+    end
+    return p
+end
+
+-- ~/projects/quest-blocks/projects/apple -> ~/p/q/projects/apple
+local function shorten(p, max)
+    if utf8.len(p) <= max then return p end
+    local parts = {}
+    for part in p:gmatch("[^/]+") do parts[#parts + 1] = part end
+    local lead = p:sub(1, 1) == "/" and "/" or ""
+    for i = 1, #parts - 2 do
+        if parts[i] ~= "~" then
+            local dot = parts[i]:sub(1, 1) == "." and 2 or 1
+            parts[i] = chars(parts[i])[1] .. (dot == 2 and (chars(parts[i])[2] or "") or "")
+        end
+    end
+    return lead .. table.concat(parts, "/")
+end
+
+-- still too long: scroll back and forth with a pause at each end
+local function marquee(p, max, k, animate)
+    local cs = chars(p)
+    if #cs <= max then return p end
+    local overflow = #cs - max
+    local offset = overflow -- static: show the tail (current dir is most useful)
+    if animate then
+        -- one character per tick, pausing at each end
+        local cycle = 2 * (overflow + MARQUEE_PAUSE)
+        local x = k % cycle
+        if x < MARQUEE_PAUSE then
+            offset = 0
+        elseif x < MARQUEE_PAUSE + overflow then
+            offset = x - MARQUEE_PAUSE
+        elseif x < 2 * MARQUEE_PAUSE + overflow then
+            offset = overflow
+        else
+            offset = overflow - (x - 2 * MARQUEE_PAUSE - overflow)
+        end
+    end
+    return table.concat(cs, "", offset + 1, offset + max)
+end
+
+-- cwd lookup can hit the OS, so cache it per pane for a second
+local cwd_cache = {}
+local function pane_dir(pane)
+    local id = pane:pane_id()
+    local t = os.time()
+    local c = cwd_cache[id]
+    if c and c.t == t then return c.dir end
+    local p = url_path(pane:get_current_working_dir())
+    local dir = p and shorten(home_relative(p), DIR_MAX) or ""
+    cwd_cache[id] = { t = t, dir = dir }
+    return dir
+end
+
+---------------------------------------------------------------- setup
+
+function M.apply(config, theme, state)
+    local ui = theme.ui
+    local animate = state.animate
+    wezterm.GLOBAL.session_start = wezterm.GLOBAL.session_start or os.time()
+
+    config.status_update_interval = animate and FAST_MS or SLOW_MS
+    config.tab_max_width = 40
+
+    -- tabs: "▌0 name " (2 cells of decoration around the label)
+    wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, hover, max_width)
+        local pane = tab.active_pane
+        local proc = process_name(pane)
+        local auto = proc
+        if SHELLS[proc] or proc == "" then
+            auto = basename(url_path(pane.current_working_dir) or pane.title)
+        end
+        local name = (tab.tab_title and tab.tab_title ~= "") and tab.tab_title or auto
+        local label = fit(string.format("%d %s", tab.tab_index, name), max_width - 2)
+
+        if tab.is_active then
+            -- the active tab shimmers like the activity word
+            local items = {
+                { Background = { Color = ui.bg_active } },
+                { Foreground = { Color = ui.accent } }, { Text = "▌" },
+                { Attribute = { Intensity = "Bold" } },
+            }
+            for _, it in ipairs(shimmer(label, ui.bright, ui.shimmer[2], tick(), animate)) do
+                items[#items + 1] = it
+            end
+            items[#items + 1] = { Text = " " }
+            return items
+        end
+        return {
+            { Background = { Color = hover and ui.bg_active or ui.bg } },
+            { Foreground = { Color = hover and ui.accent or ui.muted } },
+            { Text = " " .. label .. " " },
+        }
+    end)
+
+    wezterm.on("update-status", function(window, pane)
+        local k = tick()
+
+        -- left: activity line / leader indicator
+        local left = { { Background = { Color = ui.bg } } }
+        if window:leader_is_active() then
+            table.insert(left, { Background = { Color = ui.accent } })
+            table.insert(left, { Foreground = { Color = ui.bg } })
+            table.insert(left, { Attribute = { Intensity = "Bold" } })
+            table.insert(left, { Text = " LEADER " })
+            table.insert(left, "ResetAttributes")
+            table.insert(left, { Background = { Color = ui.bg } })
+            table.insert(left, { Text = " " })
+        elseif state.activity ~= "off" then
+            local elapsed = os.time() - wezterm.GLOBAL.session_start
+            local word = pick_word(wezterm.GLOBAL.session_start, elapsed // WORD_SECONDS)
+            local frame = animate and FRAMES[k % #FRAMES + 1] or "✻"
+            table.insert(left, { Foreground = { Color = ui.shimmer[1] } })
+            table.insert(left, { Text = " " .. frame .. " " })
+            for _, it in ipairs(shimmer(word .. "…", ui.shimmer[1], ui.shimmer[2], k, animate)) do
+                table.insert(left, it)
+            end
+            table.insert(left, { Foreground = { Color = ui.muted } })
+            if state.activity == "compact" then
+                table.insert(left, { Text = "  " })
+            else
+                table.insert(left, { Text = " (" .. format_elapsed(elapsed) .. ")  " })
+            end
+        end
+        window:set_left_status(wezterm.format(left))
+
+        -- right: directory, then clock in the corner
+        local dir = marquee(pane_dir(pane), DIR_MAX, k, animate)
+        window:set_right_status(wezterm.format({
+            { Background = { Color = ui.bg } },
+            { Foreground = { Color = ui.muted } }, { Text = nf("md_folder_outline") .. " " },
+            { Foreground = { Color = ui.fg } }, { Text = dir .. "  " },
+            { Background = { Color = ui.bg_active } },
+            { Foreground = { Color = ui.accent } }, { Text = "▌" },
+            { Foreground = { Color = ui.bright } }, { Attribute = { Intensity = "Bold" } },
+            { Text = wezterm.strftime("%H:%M") .. " " },
+        }))
+    end)
+end
+
+function M.keys()
+    local state_store = require("state")
+    return {
+        {
+            mods = "LEADER",
+            key = ",",
+            action = wezterm.action.PromptInputLine({
+                description = "Tab name (empty = automatic)",
+                action = wezterm.action_callback(function(window, _pane, line)
+                    if line ~= nil then -- nil = Esc
+                        window:active_tab():set_title(line)
+                    end
+                end),
+            }),
+        },
+        {
+            mods = "LEADER",
+            key = "s",
+            action = wezterm.action_callback(function(_window, _pane)
+                state_store.cycle_activity()
+                wezterm.reload_configuration()
+            end),
+        },
+        {
+            mods = "LEADER",
+            key = "a",
+            action = wezterm.action_callback(function(_window, _pane)
+                state_store.toggle_animate()
+                wezterm.reload_configuration()
+            end),
+        },
+    }
+end
+
+return M

@@ -59,6 +59,13 @@ do
     config.colors = t.colors
     config.background = t.background
     wezterm.add_to_config_reload_watch_list(state_store.theme_file)
+
+    -- bottom bar: tab names, activity line, cwd + clock
+    local tabbar = require("tabbar")
+    tabbar.apply(config, themes.get(state.theme), state)
+    for _, k in ipairs(tabbar.keys()) do
+        table.insert(config.keys, k)
+    end
 end
 
 return config

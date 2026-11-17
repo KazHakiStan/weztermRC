@@ -32,6 +32,17 @@ local function ashen_like(a)
         pics = a.pics,
         bg_opacity = 0.4,
         background = "#000000",
+        -- tab bar / status colors (tabbar.lua)
+        ui = {
+            bg = "#121212",
+            bg_active = "#222222",
+            fg = "#d5d5d5",
+            muted = "#737373",
+            accent = a.accent,
+            bright = a.accent_bright,
+            glow = a.glow,
+            shimmer = a.shimmer, -- { base, highlight }
+        },
         colors = {
             foreground = "#ffffff",
             background = "#121212",
@@ -74,6 +85,7 @@ M.themes = {
         selection     = "#6f2929", -- red_ashen
         split         = "#6f2929",
         active_tab    = "#aaaaaa",
+        shimmer       = { "#b14242", "#e5e5e5" }, -- same as proto-agent
     }),
     -- ashen layout recolored from assets/aegis-lavender.png
     ["aegis-lavender"] = ashen_like({
@@ -87,6 +99,7 @@ M.themes = {
         selection     = "#543c6c", -- deep violet
         split         = "#6c3c84",
         active_tab    = "#3cf0f0",
+        shimmer       = { "#b98af0", "#3cf0f0" }, -- lavender swept by cyan
     }),
     dark2 = {
         colors = {
@@ -220,6 +233,16 @@ M.themes = {
         bg_opacity = 0.2,
         background = "#FFFFFF",
         pics = "picL*",
+        ui = {
+            bg = "#fbf1c7",
+            bg_active = "#ebdbb2",
+            fg = "#3c3836",
+            muted = "#928374",
+            accent = "#9d0006",
+            bright = "#cc241d",
+            glow = "#076678",
+            shimmer = { "#9d0006", "#d79921" },
+        },
     },
 }
 

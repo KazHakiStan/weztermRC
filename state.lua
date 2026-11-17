@@ -44,12 +44,36 @@ function M.load()
     end
     local shared = read_json(M.theme_file) or {}
     local theme = shared.theme or data.theme
-    return { theme = legacy[theme] or theme, idx = idx }
+    return {
+        theme = legacy[theme] or theme,
+        idx = idx,
+        animate = data.animate ~= false, -- on by default
+        activity = data.activity or "full",
+    }
 end
 
 function M.save(state)
-    write_json(state_path, { idx = state.idx })
+    write_json(state_path, { idx = state.idx, animate = state.animate, activity = state.activity })
     write_json(M.theme_file, { theme = state.theme })
+end
+
+function M.toggle_animate()
+    local s = M.load()
+    s.animate = not s.animate
+    M.save(s)
+end
+
+-- activity element: full (word + session time) -> compact (word) -> off
+M.ACTIVITY_MODES = { "full", "compact", "off" }
+
+function M.cycle_activity()
+    local s = M.load()
+    local pos = 1
+    for i, m in ipairs(M.ACTIVITY_MODES) do
+        if m == s.activity then pos = i end
+    end
+    s.activity = M.ACTIVITY_MODES[pos % #M.ACTIVITY_MODES + 1]
+    M.save(s)
 end
 
 local function wrap(i, count)
