@@ -9,6 +9,7 @@ local state_store = require("state")
 
 config.default_prog = constants.default_prog
 config.exit_behavior = "Close"
+config.enable_kitty_graphics = true
 
 -- leader
 config.leader = {
