@@ -8,8 +8,8 @@ local state_path = constants.join(wezterm.config_dir, "state.json")
 -- shared with nvim: current theme name
 M.theme_file = constants.paths.theme_file
 
--- names used before the shared theme file existed
-local legacy = { dark = "ashen" }
+-- old theme names -> current ones (state files written by earlier versions)
+local legacy = { dark = "ashen", light = "metaphor-light" }
 
 local function read_json(path)
     local f = io.open(path, "r")

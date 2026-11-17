@@ -1,7 +1,7 @@
 local M = {}
 
 -- order for LEADER t; names must match nvim's lua/kazhakistan/theme.lua
-M.order = { "ashen", "aegis-lavender", "aegis-gold", "light" }
+M.order = { "ashen", "aegis-lavender", "aegis-gold", "metaphor-light" }
 M.default = "ashen"
 
 -- Dark themes built on the ashen layout: grayscale base + accent set.
@@ -181,81 +181,74 @@ M.themes = {
         bg_opacity = 0.4,
         background = "#000000",
     },
-    light = {
+    ["metaphor-light"] = {
+        -- Metaphor palette (same as nvim's light override): ink, crimson, laurel,
+        -- antique gold, royal blue, plum, jade; ~4:1 contrast over the print
         colors = {
-            foreground = "#3c3836",
+            foreground = "#3b2a1a",
             background = "#fbf1c7",
 
-            cursor_bg = "#3c3836",
+            cursor_bg = "#7a5806",
             cursor_fg = "#fbf1c7",
-            cursor_border = "#3c3836",
+            cursor_border = "#7a5806",
 
-            selection_fg = "#fbf1c7",
-            selection_bg = "#b57614",
+            selection_fg = "#2c1f12",
+            selection_bg = "#f0d38c", -- gold leaf
 
             scrollbar_thumb = "#bdae93",
 
-            split = "#bdae93",
+            split = "#b57614",
 
             ansi = {
-                "#fbf1c7",
-                "#cc241d",
-                "#98971a",
-                "#d79921",
-                "#458588",
-                "#b16286",
-                "#689d6a",
-                "#7c6f64"
+                "#fbf1c7", -- black (gruvbox light convention: the background)
+                "#a30d1f", -- red: crimson
+                "#4f5e1e", -- green: laurel
+                "#7a5806", -- yellow: antique gold
+                "#2b5585", -- blue: royal blue
+                "#7a3c6c", -- magenta: plum
+                "#24605a", -- cyan: jade
+                "#62523c", -- white: dark sepia
             },
 
             brights = {
-                "#928374",
-                "#9d0006",
-                "#79740e",
-                "#b57614",
-                "#076678",
-                "#8f3f71",
-                "#427b58",
-                "#3c3836"
+                "#74624a", -- black: sepia (comments, autosuggestions)
+                "#a30d1f",
+                "#4f5e1e",
+                "#7a5806",
+                "#2b5585",
+                "#7a3c6c",
+                "#24605a",
+                "#2c1f12", -- white: ink
             },
 
-            -- Optional: Tab bar colors
+            -- parchment bar with gold accents (matches the Metaphor print)
             tab_bar = {
-                background = "#fbf1c7",
-                active_tab = {
-                    bg_color = "#ebdbb2",
-                    fg_color = "#3c3836",
-                },
-                inactive_tab = {
-                    bg_color = "#f2e5bc",
-                    fg_color = "#7c6f64",
-                },
-                inactive_tab_hover = {
-                    bg_color = "#ebdbb2",
-                    fg_color = "#3c3836",
-                },
-                new_tab = {
-                    bg_color = "#fbf1c7",
-                    fg_color = "#7c6f64",
-                },
-                new_tab_hover = {
-                    bg_color = "#ebdbb2",
-                    fg_color = "#3c3836",
-                },
+                background = "#ebdbb2",
+                active_tab = { bg_color = "#d5c4a1", fg_color = "#b57614" },
+                inactive_tab = { bg_color = "#ebdbb2", fg_color = "#7c6f64" },
+                inactive_tab_hover = { bg_color = "#d5c4a1", fg_color = "#b57614" },
+                new_tab = { bg_color = "#ebdbb2", fg_color = "#b57614" },
+                new_tab_hover = { bg_color = "#d5c4a1", fg_color = "#af3a03" },
             },
         },
-        bg_opacity = 0.2,
-        background = "#FFFFFF",
-        pics = "picL*",
+        -- assets/metaphor-light{1,2}.png are pre-toned prints on parchment
+        -- (assets/src/light_from_art.py + light_ornate.py), shown as they are
+        bg_opacity = 1.0,
+        background = "#fbf1c7",
+        pics = "metaphor-light*",
+        -- the window is rarely 16:9: crop the print evenly, and draw the frame as
+        -- its own layer stretched to the window so it always sits at the edges
+        align = "Center",
+        overlay = "frame-metaphor-light.png",
         ui = {
-            bg = "#fbf1c7",
-            bg_active = "#ebdbb2",
+            bg = "#ebdbb2",        -- gruvbox bg1
+            bg_active = "#d5c4a1", -- bg2
             fg = "#3c3836",
-            muted = "#928374",
-            accent = "#9d0006",
-            bright = "#cc241d",
-            glow = "#076678",
-            shimmer = { "#9d0006", "#d79921" },
+            muted = "#7c6f64",
+            accent = "#b57614",    -- gold (gruvbox yellow, dark)
+            bright = "#b57614",
+            glow = "#076678",      -- blue: MOVE badge stands apart from LEADER
+            shimmer = { "#b57614", "#d65d0e" }, -- gold catching orange light
         },
     },
 }
@@ -275,7 +268,7 @@ function M.build(theme_name, bg_file)
         },
     }
     if bg_file and bg_file ~= "" then
-        -- Cover keeps aspect ratio; art sits on the right of every picture
+        -- Cover keeps aspect ratio; by default pinned right, where the Aegis art is
         table.insert(layers, {
             source = { File = bg_file },
             opacity = t.bg_opacity or 0.4,
@@ -283,8 +276,20 @@ function M.build(theme_name, bg_file)
             height = "Cover",
             repeat_x = "NoRepeat",
             repeat_y = "NoRepeat",
-            horizontal_align = "Right",
+            horizontal_align = t.align or "Right",
             vertical_align = "Middle",
+        })
+    end
+    if t.overlay then
+        -- transparent PNG stretched to the window (e.g. a frame)
+        local constants = require("constants")
+        table.insert(layers, {
+            source = { File = constants.join(constants.paths.assets_dir, t.overlay) },
+            opacity = 1.0,
+            width = "100%",
+            height = "100%",
+            repeat_x = "NoRepeat",
+            repeat_y = "NoRepeat",
         })
     end
     return { colors = t.colors, background = layers }
