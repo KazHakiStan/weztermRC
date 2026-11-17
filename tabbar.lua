@@ -1,6 +1,7 @@
 -- Bottom bar: custom tab titles, activity line (left), cwd + clock (right).
 --   LEADER ,   rename tab (empty input = automatic name)
 --   LEADER s   activity element: full -> compact (no time) -> off
+--   LEADER w   next activity word now (restarts its 2-minute timer)
 --   LEADER a   toggle animations (persisted in state.json)
 -- Activity line follows proto-agent's ui/activity.py: glyph, shimmering word, elapsed time.
 
@@ -189,6 +190,20 @@ local function pick_word(seed, period)
 end
 
 -- fit into `width` cells, marking the cut with an ellipsis
+-- current word period; LEADER w jumps to the next one and restarts its 2-minute timer
+-- (GLOBAL survives config reloads)
+local function word_period(now)
+    local G = wezterm.GLOBAL
+    local since = G.word_since or G.session_start
+    return (G.word_base or 0) + (now - since) // WORD_SECONDS
+end
+
+local function next_word()
+    local now = os.time()
+    wezterm.GLOBAL.word_base = word_period(now) + 1
+    wezterm.GLOBAL.word_since = now
+end
+
 local function fit(text, width)
     if wezterm.column_width(text) <= width then return text end
     return wezterm.truncate_right(text, math.max(0, width - 1)) .. "…"
@@ -338,7 +353,7 @@ function M.apply(config, theme, state)
             table.insert(left, { Text = " " })
         elseif state.activity ~= "off" then
             local elapsed = os.time() - wezterm.GLOBAL.session_start
-            local word = pick_word(wezterm.GLOBAL.session_start, elapsed // WORD_SECONDS)
+            local word = pick_word(wezterm.GLOBAL.session_start, word_period(os.time()))
             local g = GROUP_OF[word] or GROUPS.proto
             local frame = animate and g.frames[(k // g.hold) % #g.frames + 1] or g.rest
             table.insert(left, { Foreground = { Color = ui.shimmer[1] } })
@@ -394,6 +409,15 @@ function M.keys()
             action = wezterm.action_callback(function(_window, _pane)
                 state_store.cycle_activity()
                 wezterm.reload_configuration()
+            end),
+        },
+        {
+            mods = "LEADER",
+            key = "w",
+            section = "Bar",
+            desc = "Next activity word now",
+            action = wezterm.action_callback(function(_window, _pane)
+                next_word()
             end),
         },
         {
