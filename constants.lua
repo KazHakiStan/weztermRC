@@ -6,9 +6,14 @@ local M = {}
 -- wezterm.home_dir     -> user's home dir
 -- wezterm.config_dir   -> directory where wezterm.lua lives
 
+-- Always "/": Windows accepts it everywhere wezterm uses paths, while "\"
+-- would act as an escape character in wezterm.glob patterns.
 local function join(...)
-    local sep = package.config:sub(1, 1) -- "\" on Windows, "/" on unix
-    return table.concat({...}, sep)
+    local parts = {}
+    for i, p in ipairs({...}) do
+        parts[i] = (p:gsub("\\", "/"))
+    end
+    return table.concat(parts, "/")
 end
 
 M.join = join
