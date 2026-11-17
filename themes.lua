@@ -1,72 +1,93 @@
 local M = {}
 
-M.themes = {
-    dark = {
+-- order for LEADER t; names must match nvim's lua/kazhakistan/theme.lua
+M.order = { "ashen", "aegis-lavender", "light" }
+M.default = "ashen"
+
+-- Dark themes built on the ashen layout: grayscale base + accent set.
+-- ANSI slots follow ashen.nvim's terminal map (ashen/variants/default/ansi.lua),
+-- except black, which ashen sets to the background (invisible); g_7 is used instead.
+local function ashen_like(a)
+    local ansi = {
+        "#535353",       -- black   (g_7)
+        a.accent,        -- red     (red_ember)
+        a.glow,          -- green   (orange_glow)
+        a.smolder,       -- yellow  (orange_smolder)
+        a.blue,          -- blue
+        "#a7a7a7",       -- magenta (g_4)
+        "#b4b4b4",       -- cyan    (g_3)
+        "#d5d5d5",       -- white   (g_2)
+    }
+    local brights = {
+        "#949494",       -- black   (g_5)
+        a.accent_bright, -- red     (red_glowing)
+        a.glow,
+        a.smolder,
+        a.blue,
+        "#a7a7a7",
+        "#b4b4b4",
+        "#e5e5e5",       -- white   (g_1)
+    }
+    return {
+        pics = a.pics,
+        bg_opacity = 0.4,
+        background = "#000000",
         colors = {
             foreground = "#ffffff",
             background = "#121212",
 
             cursor_fg = "#000000",
-            cursor_bg = "#aaaaaa",
-            cursor_border = "#aaaaaa",
+            cursor_bg = a.cursor,
+            cursor_border = a.cursor,
 
-            selection_fg = "#000000",
-            selection_bg = "#aaaaaa",
+            selection_fg = "#ffffff",
+            selection_bg = a.selection,
 
-            scrollbar_thumb = "#ffffff",
+            scrollbar_thumb = "#535353",
+            split = a.split,
 
-            split = "#ffffff",
+            ansi = ansi,
+            brights = brights,
 
-            ansi = {
-                "#928374",  -- black
-                "#b14242",  -- red
-                "#b8bb26",  -- green
-                "#fabd2f",  -- yellow
-                "#83a598",  -- blue
-                "#d3869b",  -- magenta
-                "#8ec07c",  -- cyan
-                "#ffffff"   -- white
-            },
-
-            brights = {
-                "#928374",  -- black
-                "#b14242",  -- red
-                "#b8bb26",  -- green
-                "#fabd2f",  -- yellow
-                "#83a598",  -- blue
-                "#d3869b",  -- magenta
-                "#8ec07c",  -- cyan
-                "#ffffff"   -- white
-            },
-
-            -- Optional: Tab bar colors
             tab_bar = {
                 background = "#121212",
-                active_tab = {
-                    bg_color = "#222222",
-                    fg_color = "#aaaaaa",
-                },
-                inactive_tab = {
-                    bg_color = "#121212",
-                    fg_color = "#b14242",
-                },
-                inactive_tab_hover = {
-                    bg_color = "#222222",
-                    fg_color = "#b14242",
-                },
-                new_tab = {
-                    bg_color = "#121212",
-                    fg_color = "#b14242",
-                },
-                new_tab_hover = {
-                    bg_color = "#222222",
-                    fg_color = "#b14242",
-                },
+                active_tab = { bg_color = "#222222", fg_color = a.active_tab },
+                inactive_tab = { bg_color = "#121212", fg_color = a.accent },
+                inactive_tab_hover = { bg_color = "#222222", fg_color = a.accent },
+                new_tab = { bg_color = "#121212", fg_color = a.accent },
+                new_tab_hover = { bg_color = "#222222", fg_color = a.accent },
             },
         },
-        bg_opacity = 0.4,
-        background = "#000000",
-    },
+    }
+end
+
+M.themes = {
+    -- ashen.nvim default palette (red)
+    ["ashen"] = ashen_like({
+        pics          = "picD*",
+        accent        = "#b14242", -- red_ember
+        accent_bright = "#df6464", -- red_glowing
+        glow          = "#d87c4a", -- orange_glow
+        smolder       = "#e49a44", -- orange_smolder
+        blue          = "#4a8b8b",
+        cursor        = "#aaaaaa",
+        selection     = "#6f2929", -- red_ashen
+        split         = "#6f2929",
+        active_tab    = "#aaaaaa",
+    }),
+    -- ashen layout recolored from assets/aegis-lavender.png
+    ["aegis-lavender"] = ashen_like({
+        pics          = "aegis-lavender*",
+        accent        = "#b98af0", -- lavender
+        accent_bright = "#e4a8fc", -- light lavender
+        glow          = "#3cf0f0", -- neon cyan
+        smolder       = "#e08cd8", -- pink
+        blue          = "#2fb8c0",
+        cursor        = "#e4a8fc",
+        selection     = "#543c6c", -- deep violet
+        split         = "#6c3c84",
+        active_tab    = "#3cf0f0",
+    }),
     dark2 = {
         colors = {
             foreground = "#ebdbb2",
@@ -198,26 +219,38 @@ M.themes = {
         },
         bg_opacity = 0.2,
         background = "#FFFFFF",
+        pics = "picL*",
     },
 }
 
-function M.build_overrides(theme_name, bg_file)
-    local t = M.themes[theme_name] or M.themes.dark
-    return {
-        colors = t.colors,
-        background = {
-            {
-                source = { Color = t.background },
-                opacity = 1,
-                height = "100%",
-                width = "100%",
-            },
-            {
-                source = { File = bg_file },
-                opacity = t.bg_opacity or 0.4,
-            },
+function M.get(theme_name)
+    return M.themes[theme_name] or M.themes[M.default]
+end
+
+function M.build(theme_name, bg_file)
+    local t = M.get(theme_name)
+    local layers = {
+        {
+            source = { Color = t.background },
+            opacity = 1,
+            height = "100%",
+            width = "100%",
         },
     }
+    if bg_file and bg_file ~= "" then
+        -- Cover keeps aspect ratio; art sits on the right of every picture
+        table.insert(layers, {
+            source = { File = bg_file },
+            opacity = t.bg_opacity or 0.4,
+            width = "Cover",
+            height = "Cover",
+            repeat_x = "NoRepeat",
+            repeat_y = "NoRepeat",
+            horizontal_align = "Right",
+            vertical_align = "Middle",
+        })
+    end
+    return { colors = t.colors, background = layers }
 end
 
 return M

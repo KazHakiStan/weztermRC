@@ -29,9 +29,13 @@ M.paths = {
     -- bg_image    = join(wezterm.config_dir, "assets", "picD3.jpeg"),
 }
 
+-- shared with nvim: {"theme":"<name>"}; nvim lives elsewhere on Windows,
+-- but both resolve ~ to the same home dir
+M.paths.theme_file = join(wezterm.home_dir, ".config", "theme.json")
+
 local function extract_num(path)
-    -- expects .../picD1.png or .../picL1.png
-    local n = path:match("pic[DL](%d+)")
+    -- trailing number before extension: picD4.png -> 4, aegis-lavender.png -> 0
+    local n = path:match("(%d+)%.%w+$")
     return tonumber(n) or 0
 end
 
@@ -46,10 +50,10 @@ local function sort_pics(pics)
     return pics
 end
 
-function M.list_theme_pics(theme)
-    local prefix = (theme == "light") and "picL" or "picD"
-    local pattern = join(M.paths.assets_dir, prefix .. "*.*")
-    local pics = wezterm.glob(pattern) or {}
+-- glob is relative to assets/, e.g. "picD*" or "aegis-lavender*"
+function M.list_pics(glob)
+    if not glob then return {} end
+    local pics = wezterm.glob(join(M.paths.assets_dir, glob .. ".*")) or {}
     return sort_pics(pics)
 end
 

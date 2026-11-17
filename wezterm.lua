@@ -51,53 +51,14 @@ for _, k in ipairs(keymaps.keys()) do
     table.insert(config.keys, k)
 end
 
-local function ensure_state()
-    if wezterm.GLOBAL.theme_state then
-        return wezterm.GLOBAL.theme_state
-    end
-
-    local persisted = state_store.load() or {}
-
-    wezterm.GLOBAL.theme_state = {
-        theme = persisted.theme or "dark",
-        idx = persisted.idx or { dark = 1, light = 1 },
-        pics = {
-            dark = constants.list_theme_pics("dark"),
-            light = constants.list_theme_pics("light"),
-        },
-    }
-    return wezterm.GLOBAL.theme_state
-end
-
-local function current_bg_for_state(state)
-    local pics = state.pics[state.theme] or {}
-    local i = state.idx[state.theme] or 1
-    return pics[i] or ""
-end
-
-local function apply_overrides(window)
-    local state = ensure_state()
-    local bg = current_bg_for_state(state)
-    local overrides = themes.build_overrides(state.theme, bg)
-    window:set_config_overrides(overrides)
-end
-
-wezterm.on("gui-startup", function(cmd)
-    local _tab, _pane, window = wezterm.mux.spawn_window(cmd or {})
-    apply_overrides(window)
-end)
-
-wezterm.on("window-created", function(window, _pane)
-    apply_overrides(window)
-end)
-
+-- theme: rebuilt from state files on every config load.
+-- The shared theme file is watched, so `:Theme x` in nvim re-themes wezterm.
 do
-    local state = ensure_state()
-    local bg = current_bg_for_state(state)
-    local base = themes.build_overrides(state.theme, bg)
-
-    config.colors = base.colors
-    config.background = base.background
+    local state = state_store.current()
+    local t = themes.build(state.theme, state.bg)
+    config.colors = t.colors
+    config.background = t.background
+    wezterm.add_to_config_reload_watch_list(state_store.theme_file)
 end
 
 return config
