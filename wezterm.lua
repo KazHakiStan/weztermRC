@@ -37,19 +37,28 @@ config.mouse_bindings = {
     },
 }
 
-config.keys = keymaps.remaps()
+-- every binding goes through help.add, so its `desc` lands in the cheat sheet
+local help = require("help")
+config.keys = {}
+local function bind(section, specs)
+    for _, k in ipairs(help.add(section, specs)) do
+        table.insert(config.keys, k)
+    end
+end
+
+bind("Tabs", keymaps.remaps())
 
 for i = 0, 9 do
-    table.insert(config.keys, {
+    bind("Tabs", { {
         key = tostring(i),
         mods = "LEADER",
         action = wezterm.action.ActivateTab(i),
-    })
+    } })
 end
+help.note("Tabs", "LEADER 0-9", "Go to tab N")
 
-for _, k in ipairs(keymaps.keys()) do
-    table.insert(config.keys, k)
-end
+bind("Theme", keymaps.keys())
+config.key_tables = keymaps.key_tables()
 
 -- theme: rebuilt from state files on every config load.
 -- The shared theme file is watched, so `:Theme x` in nvim re-themes wezterm.
@@ -63,9 +72,11 @@ do
     -- bottom bar: tab names, activity line, cwd + clock
     local tabbar = require("tabbar")
     tabbar.apply(config, themes.get(state.theme), state)
-    for _, k in ipairs(tabbar.keys()) do
-        table.insert(config.keys, k)
-    end
+    bind("Bar", tabbar.keys())
 end
+
+-- cheat sheet: LEADER i, plus entries in the command palette (Ctrl+Shift+P)
+bind("Help", help.keys())
+help.apply()
 
 return config

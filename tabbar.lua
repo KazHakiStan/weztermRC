@@ -261,11 +261,18 @@ function M.apply(config, theme, state)
 
         -- left: activity line / leader indicator
         local left = { { Background = { Color = ui.bg } } }
+        -- mode badges: LEADER pending, or a key table mode (LEADER m -> MOVE)
+        local badge, badge_bg
         if window:leader_is_active() then
-            table.insert(left, { Background = { Color = ui.accent } })
+            badge, badge_bg = "LEADER", ui.accent
+        elseif window:active_key_table() == "move_tab" then
+            badge, badge_bg = "MOVE  b n 0-9", ui.glow
+        end
+        if badge then
+            table.insert(left, { Background = { Color = badge_bg } })
             table.insert(left, { Foreground = { Color = ui.bg } })
             table.insert(left, { Attribute = { Intensity = "Bold" } })
-            table.insert(left, { Text = " LEADER " })
+            table.insert(left, { Text = " " .. badge .. " " })
             table.insert(left, "ResetAttributes")
             table.insert(left, { Background = { Color = ui.bg } })
             table.insert(left, { Text = " " })
@@ -307,6 +314,8 @@ function M.keys()
         {
             mods = "LEADER",
             key = ",",
+            section = "Tabs",
+            desc = "Rename tab (empty = automatic name)",
             action = wezterm.action.PromptInputLine({
                 description = "Tab name (empty = automatic)",
                 action = wezterm.action_callback(function(window, _pane, line)
@@ -319,6 +328,8 @@ function M.keys()
         {
             mods = "LEADER",
             key = "s",
+            section = "Bar",
+            desc = "Activity element: full → compact (no time) → off",
             action = wezterm.action_callback(function(_window, _pane)
                 state_store.cycle_activity()
                 wezterm.reload_configuration()
@@ -327,6 +338,8 @@ function M.keys()
         {
             mods = "LEADER",
             key = "a",
+            section = "Bar",
+            desc = "Animations on / off",
             action = wezterm.action_callback(function(_window, _pane)
                 state_store.toggle_animate()
                 wezterm.reload_configuration()
