@@ -1,10 +1,12 @@
 local M = {}
 
--- order for LEADER t (names match nvim's lua/kazhakistan/theme.lua) and the
--- pictures: settings (defaults.lua / ~/.config/kazrc/wezterm.lua)
-local settings = require("kazrc").get().themes
-M.order = settings.order
-M.default = settings.default
+-- order for LEADER t and the default: ~/.config/kazrc/themes.lua, shared with
+-- nvim (names match its lua/kazhakistan/theme.lua); pictures: settings
+-- (defaults.lua / ~/.config/kazrc/wezterm.lua)
+local kazrc = require("kazrc")
+local settings = kazrc.get().themes
+M.order = kazrc.themes().order
+M.default = kazrc.themes().default
 
 -- Dark themes built on the ashen layout: grayscale base + accent set.
 -- ANSI slots follow ashen.nvim's terminal map (ashen/variants/default/ansi.lua),
@@ -75,9 +77,9 @@ local function ashen_like(a)
 end
 
 M.themes = {
-    -- ashen.nvim default palette (red)
+    -- ashen.nvim default palette (red), over the red Aegis
     ["ashen"] = ashen_like({
-        pics          = "picD*",
+        pics          = "aegis-red*",
         accent        = "#b14242", -- red_ember
         accent_bright = "#df6464", -- red_glowing
         glow          = "#d87c4a", -- orange_glow
@@ -117,7 +119,21 @@ M.themes = {
         active_tab    = "#f2e6c4",
         shimmer       = { "#d4a13f", "#fff3d0" }, -- gold catching the light
     }),
-    dark2 = {
+    -- LEGACY: gruvbox dark over a Silent Hunter 5 screenshot. To move into kazRC
+    -- as a user theme (the test case for custom themes) and leave the defaults.
+    ["silent-hunter"] = {
+        pics = "silent-hunter*",
+        -- tab bar / status colors (tabbar.lua)
+        ui = {
+            bg = "#282828",
+            bg_active = "#504945",
+            fg = "#ebdbb2",
+            muted = "#a89984",
+            accent = "#d79921",
+            bright = "#fabd2f",
+            glow = "#458588",
+            shimmer = { "#d79921", "#fbf1c7" },
+        },
         colors = {
             foreground = "#ebdbb2",
             background = "#282828",
@@ -254,6 +270,19 @@ M.themes = {
         },
     },
 }
+
+-- names in themes.lua that WezTerm has no theme for: skipped, reported on the bar
+do
+    local known = {}
+    for _, n in ipairs(M.order) do
+        if M.themes[n] then known[#known + 1] = n else kazrc.add_problem("themes.lua: no theme `" .. tostring(n) .. "`") end
+    end
+    M.order = #known > 0 and known or { "ashen" }
+    if not M.themes[M.default] then
+        kazrc.add_problem("themes.lua: default `" .. tostring(M.default) .. "` isn't a theme")
+        M.default = M.order[1]
+    end
+end
 
 function M.get(theme_name)
     return M.themes[theme_name] or M.themes[M.default] or M.themes.ashen

@@ -31,7 +31,6 @@ M.platform = {
 
 M.paths = {
     assets_dir   = join(wezterm.config_dir, "assets"),
-    -- bg_image    = join(wezterm.config_dir, "assets", "picD3.jpeg"),
 }
 
 -- shared with nvim: {"theme":"<name>"}; nvim lives elsewhere on Windows,
@@ -40,7 +39,7 @@ M.paths.theme_file = join(wezterm.home_dir, ".config", "kazrc", "theme.json")
 M.paths.legacy_theme_file = join(wezterm.home_dir, ".config", "theme.json") -- before kazrc
 
 local function extract_num(path)
-    -- trailing number before extension: picD4.png -> 4, aegis-lavender.png -> 0
+    -- trailing number before extension: metaphor-light1.png -> 1, aegis-red.png -> 0
     local n = path:match("(%d+)%.%w+$")
     return tonumber(n) or 0
 end
@@ -56,7 +55,7 @@ local function sort_pics(pics)
     return pics
 end
 
--- a glob in assets/ ("picD*" -> picD*.*), or a path of your own:
+-- a glob in assets/ ("aegis-red*" -> aegis-red*.*), or a path of your own:
 -- "~/Pictures/walls/*.jpg", "/abs/path/*.png", "C:/walls/*"
 function M.list_pics(glob)
     if not glob or glob == "" then return {} end

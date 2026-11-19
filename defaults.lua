@@ -20,16 +20,15 @@ return {
     },
 
     themes = {
-        -- LEADER t cycles through these; names match nvim's themes
-        order = { "ashen", "aegis-lavender", "aegis-gold", "metaphor-light" },
-        default = "ashen",
-        -- background pictures per theme (LEADER [ / ]): a glob in assets/ or a
-        -- path of your own, e.g. ashen = "~/Pictures/walls/*.jpg"
+        -- order and default: ~/.config/kazrc/themes.lua, shared with nvim
+        -- background picture per theme: a glob in assets/ or a path of your
+        -- own, e.g. ashen = "~/Pictures/walls/red.jpg"
         pictures = {
-            ["ashen"] = "picD*",
+            ["ashen"] = "aegis-red*",
             ["aegis-lavender"] = "aegis-lavender*",
             ["aegis-gold"] = "aegis-gold*",
             ["metaphor-light"] = "metaphor-light*",
+            ["silent-hunter"] = "silent-hunter*",
         },
     },
 

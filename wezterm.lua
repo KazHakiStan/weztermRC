@@ -6,6 +6,7 @@ local config = wezterm.config_builder()
 -- first start uses wezterm's async file functions, which can't run in require.
 local kazrc = require("kazrc")
 local settings = kazrc.get()
+kazrc.themes()
 
 local constants = require("constants")
 local themes = require("themes")

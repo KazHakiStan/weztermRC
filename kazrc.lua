@@ -14,6 +14,26 @@ end
 M.dir = join(wezterm.home_dir, ".config", "kazrc")
 M.file = join(M.dir, "wezterm.lua")
 M.defaults_file = join(wezterm.config_dir, "defaults.lua")
+M.themes_file = join(M.dir, "themes.lua")
+
+-- Shared with nvim through ~/.config/kazrc/themes.lua (neovimRC writes the
+-- same template; keep these defaults in step with its kazrc.lua).
+local THEME_DEFAULTS = {
+    order = { "ashen", "aegis-lavender", "aegis-gold", "metaphor-light", "silent-hunter" },
+    default = "ashen",
+}
+local THEMES_TEMPLATE = table.concat({
+    "-- Themes shared by nvim and WezTerm (neovimRC + weztermRC). Below are the",
+    "-- defaults, commented out: uncomment what you change. WezTerm applies it on",
+    "-- save, nvim on the next start.",
+    "return {",
+    "--     -- LEADER t (WezTerm) and :Theme (nvim) cycle through these",
+    '--     order = { "ashen", "aegis-lavender", "aegis-gold", "metaphor-light", "silent-hunter" },',
+    "--     -- the theme before any is chosen",
+    '--     default = "ashen",',
+    "}",
+    "",
+}, "\n")
 
 -- tables whose keys are yours to add (theme names, word groups)
 local OPEN = { ["themes.pictures"] = true, ["status.groups"] = true }
@@ -23,6 +43,7 @@ local function problem(msg)
     problems[#problems + 1] = msg
     wezterm.log_warn("kazrc: " .. msg)
 end
+M.add_problem = problem
 
 local function is_list(t)
     return type(t) == "table" and (#t > 0 or next(t) == nil)
@@ -121,6 +142,29 @@ function M.get()
     end
     settings = merge(defaults, user, "")
     return settings
+end
+
+-- { order, default } from ~/.config/kazrc/themes.lua over THEME_DEFAULTS
+-- (call M.get() first: it may create the folder)
+local themes
+function M.themes()
+    if themes then return themes end
+    if not exists(M.themes_file) and mkdir(M.dir) then
+        local f = io.open(M.themes_file, "w")
+        if f then f:write(THEMES_TEMPLATE) f:close() end
+    end
+    local user = {}
+    if exists(M.themes_file) then
+        wezterm.add_to_config_reload_watch_list(M.themes_file)
+        local ok, res = pcall(dofile, M.themes_file)
+        if not ok then
+            problem((tostring(res):gsub("^.-themes%.lua:", "themes.lua:")))
+        elseif type(res) == "table" then
+            user = res
+        end
+    end
+    themes = merge(THEME_DEFAULTS, user, "themes")
+    return themes
 end
 
 -- first problem, short enough for the bar (all of them are in the debug log)

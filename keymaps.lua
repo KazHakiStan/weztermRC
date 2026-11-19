@@ -37,22 +37,25 @@ function M.keys()
                 toggle_theme(window)
             end),
         },
-        {
-            mods = "LEADER",
-            key = "]",
-            desc = "Next background picture",
-            action = wezterm.action_callback(function(window, _pane)
-                cycle_pic(window, 1)
-            end),
-        },
-        {
-            mods = "LEADER",
-            key = "[",
-            desc = "Previous background picture",
-            action = wezterm.action_callback(function(window, _pane)
-                cycle_pic(window, -1)
-            end),
-        },
+        -- TODO: picture cycling (LEADER [ / ]) comes back on top of the new theme
+        -- system (several pictures per theme in kazrc). Off until then: every
+        -- default theme has one picture now.
+        -- {
+        --     mods = "LEADER",
+        --     key = "]",
+        --     desc = "Next background picture",
+        --     action = wezterm.action_callback(function(window, _pane)
+        --         cycle_pic(window, 1)
+        --     end),
+        -- },
+        -- {
+        --     mods = "LEADER",
+        --     key = "[",
+        --     desc = "Previous background picture",
+        --     action = wezterm.action_callback(function(window, _pane)
+        --         cycle_pic(window, -1)
+        --     end),
+        -- },
     }
 end
 
