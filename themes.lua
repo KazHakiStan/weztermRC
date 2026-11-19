@@ -1,8 +1,10 @@
 local M = {}
 
--- order for LEADER t; names must match nvim's lua/kazhakistan/theme.lua
-M.order = { "ashen", "aegis-lavender", "aegis-gold", "metaphor-light" }
-M.default = "ashen"
+-- order for LEADER t (names match nvim's lua/kazhakistan/theme.lua) and the
+-- pictures: settings (defaults.lua / ~/.config/kazrc/wezterm.lua)
+local settings = require("kazrc").get().themes
+M.order = settings.order
+M.default = settings.default
 
 -- Dark themes built on the ashen layout: grayscale base + accent set.
 -- ANSI slots follow ashen.nvim's terminal map (ashen/variants/default/ansi.lua),
@@ -254,7 +256,12 @@ M.themes = {
 }
 
 function M.get(theme_name)
-    return M.themes[theme_name] or M.themes[M.default]
+    return M.themes[theme_name] or M.themes[M.default] or M.themes.ashen
+end
+
+-- background pictures of a theme: the setting, else the theme's own glob
+function M.pictures(theme_name)
+    return settings.pictures[theme_name] or M.get(theme_name).pics
 end
 
 function M.build(theme_name, bg_file)

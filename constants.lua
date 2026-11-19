@@ -36,7 +36,8 @@ M.paths = {
 
 -- shared with nvim: {"theme":"<name>"}; nvim lives elsewhere on Windows,
 -- but both resolve ~ to the same home dir
-M.paths.theme_file = join(wezterm.home_dir, ".config", "theme.json")
+M.paths.theme_file = join(wezterm.home_dir, ".config", "kazrc", "theme.json")
+M.paths.legacy_theme_file = join(wezterm.home_dir, ".config", "theme.json") -- before kazrc
 
 local function extract_num(path)
     -- trailing number before extension: picD4.png -> 4, aegis-lavender.png -> 0
@@ -55,14 +56,26 @@ local function sort_pics(pics)
     return pics
 end
 
--- glob is relative to assets/, e.g. "picD*" or "aegis-lavender*"
+-- a glob in assets/ ("picD*" -> picD*.*), or a path of your own:
+-- "~/Pictures/walls/*.jpg", "/abs/path/*.png", "C:/walls/*"
 function M.list_pics(glob)
-    if not glob then return {} end
-    local pics = wezterm.glob(join(M.paths.assets_dir, glob .. ".*")) or {}
-    return sort_pics(pics)
+    if not glob or glob == "" then return {} end
+    local pattern
+    if glob:sub(1, 2) == "~/" then
+        pattern = join(wezterm.home_dir, glob:sub(3))
+    elseif glob:sub(1, 1) == "/" or glob:match("^%a:[/\\]") then
+        pattern = glob
+    else
+        pattern = join(M.paths.assets_dir, glob .. ".*")
+    end
+    local ok, pics = pcall(wezterm.glob, pattern)
+    return sort_pics(ok and pics or {})
 end
 
-if is_windows then
+local shell = require("kazrc").get().shell
+if shell then
+    M.default_prog = shell
+elseif is_windows then
     M.default_prog = { "pwsh.exe", "-NoLogo" }
 elseif is_macos then
     M.default_prog = { "/bin/zsh", "-l" }

@@ -1,6 +1,12 @@
 local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 
+-- settings: defaults.lua + ~/.config/kazrc/wezterm.lua (LEADER e). Loaded
+-- first, here and not inside another module's require: creating the file on
+-- first start uses wezterm's async file functions, which can't run in require.
+local kazrc = require("kazrc")
+local settings = kazrc.get()
+
 local constants = require("constants")
 local themes = require("themes")
 local keymaps = require("keymaps")
@@ -13,22 +19,22 @@ config.enable_kitty_graphics = true
 
 -- leader
 config.leader = {
-    key = "q",
-    mods = "CTRL",
-    timeout_milliseconds = 2000,
+    key = settings.leader.key,
+    mods = settings.leader.mods,
+    timeout_milliseconds = settings.leader.timeout_ms,
 }
 
 -- font
-config.font_size = 12
+config.font_size = settings.font.size
 -- KazGlyphs (fonts/, built by fonts/src/build_glyphs.py): custom status glyphs
 config.font_dirs = { constants.join(wezterm.config_dir, "fonts") }
-config.font = wezterm.font_with_fallback({ "JetBrains Mono", "KazGlyphs" })
-config.line_height = 1.2
+config.font = wezterm.font_with_fallback({ settings.font.family, "JetBrains Mono", "KazGlyphs" })
+config.line_height = settings.font.line_height
 
 --- appearance
-config.window_decorations = "RESIZE"
+config.window_decorations = settings.window.decorations
 config.hide_tab_bar_if_only_one_tab = false
-config.tab_bar_at_bottom = true
+config.tab_bar_at_bottom = settings.window.tab_bar_at_bottom
 config.use_fancy_tab_bar = false
 config.tab_and_split_indices_are_zero_based = true
 
@@ -62,6 +68,12 @@ end
 help.note("Tabs", "LEADER 0-9", "Go to tab N")
 
 bind("Theme", keymaps.keys())
+bind("Settings", { {
+    mods = "LEADER",
+    key = "e",
+    desc = "Edit your settings (~/.config/kazrc/wezterm.lua) in nvim; saving applies them",
+    action = wezterm.action.SpawnCommandInNewTab({ args = keymaps.editor_argv(kazrc.file) }),
+} })
 config.key_tables = keymaps.key_tables()
 
 -- theme: rebuilt from state files on every config load.

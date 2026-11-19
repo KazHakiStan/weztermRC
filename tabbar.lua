@@ -1,7 +1,7 @@
 -- Bottom bar: custom tab titles, activity line (left), cwd + clock (right).
 --   LEADER ,   rename tab (empty input = automatic name)
 --   LEADER s   activity element: full -> compact (no time) -> off
---   LEADER w   next activity word now (restarts its 2-minute timer)
+--   LEADER w   next activity word now (restarts its timer, status.word_seconds)
 --   LEADER a   toggle animations (persisted in state.json)
 -- Activity line follows proto-agent's ui/activity.py: glyph, shimmering word, elapsed time.
 
@@ -9,98 +9,71 @@ local wezterm = require("wezterm")
 
 local M = {}
 
-local SHIMMER_WIDTH = 3.5  -- half-width of the band in characters
+-- settings: defaults.lua, overridden by ~/.config/kazrc/wezterm.lua
+local kazrc = require("kazrc")
+local S = kazrc.get()
+
+local SHIMMER_WIDTH = S.animation.shimmer_width -- half-width of the band in characters
 
 local function nf(name)
     local ok, glyph = pcall(function() return wezterm.nerdfonts[name] end)
     return ok and glyph or ""
 end
 
-local function nfs(names)
-    local out = {}
-    for i, n in ipairs(names) do out[i] = nf(n) end
-    return out
-end
-
 -- KazGlyphs (fonts/KazGlyphs.ttf): spinning tarot card, U+100000..U+10000B
 local CARD = {}
 for i = 0, 11 do CARD[#CARD + 1] = utf8.char(0x100000 + i) end
 
--- Spinner phrases from proto-agent (config.py DEFAULT_SPINNER_WORDS), grouped by
--- source so each group gets a glyph that fits it. frames: animation; hold: ticks
--- per frame; rest: the glyph shown when animations are off.
-local FEATURED = "Prototyping"
-local GROUPS = {
-    proto = { -- proto-agent's own spinner (ui/activity.py)
-        frames = { "·", "✢", "✳", "✶", "✻", "✽", "✻", "✶", "✳", "✢" }, hold = 1, rest = "✻",
-        words = { FEATURED },
-    },
-    p3 = { -- Dark Hour: the moon waxes to full and wanes
-        frames = nfs({ "md_moon_new", "md_moon_waxing_crescent", "md_moon_first_quarter",
-            "md_moon_waxing_gibbous", "md_moon_full", "md_moon_waning_gibbous",
-            "md_moon_last_quarter", "md_moon_waning_crescent" }),
-        hold = 2, rest = nf("md_moon_full"),
-        words = { "Evoking", "Tartarus-climbing", "Dark-Houring" },
-    },
-    p4 = { -- Midnight Channel: a flickering TV
-        frames = nfs({ "md_television_classic", "md_television_classic_off" }),
-        hold = 3, rest = nf("md_television_classic"),
-        words = { "TV-diving", "Midnight-channeling" },
-    },
-    p5 = { -- calling card
-        frames = CARD, hold = 1, rest = CARD[1],
-        words = { "Infiltrating palaces", "Calling-carding", "Baton-passing", "All-out-attacking",
-            "Showtiming" },
-    },
-    persona = { -- Philemon's butterfly
-        frames = nfs({ "md_butterfly_outline", "md_butterfly" }), hold = 3, rest = nf("md_butterfly"),
-        words = { "Social-linking", "Fusing personas" },
-    },
-    smt = { -- Magatsuhi flare
-        frames = nfs({ "md_star_four_points_outline", "md_star_four_points" }),
-        hold = 3, rest = nf("md_star_four_points"),
-        words = { "Press-turning", "Magatsuhi-surging", "Smirking", "Demon-negotiating",
-            "Essence-fusing", "Nahobino-merging", "Miman-hunting", "Da'at-wandering" },
-    },
-    mass_effect = { -- mass relay rings
-        frames = { "◐", "◓", "◑", "◒" }, hold = 2, rest = "◐",
-        words = { "Calibrating", "Relay-jumping", "Omni-tooling", "Biotic-charging", "Planet-probing",
-            "Paragoning", "Renegading", "Indoctrinating" },
-    },
-    cyberpunk = { -- glitching pixel
-        frames = { "▖", "▘", "▝", "▗" }, hold = 1, rest = "▘",
-        words = { "Netrunning", "Jacking in", "Quickhacking", "Breaching protocol", "Braindancing",
-            "Overclocking", "Sandevistaning", "Chroming up" },
-    },
-    expanse = { -- Epstein drive burn
-        frames = nfs({ "md_rocket_launch_outline", "md_rocket_launch" }),
-        hold = 3, rest = nf("md_rocket_launch"),
-        words = { "Burning hard", "Juicing", "Protomoleculizing" },
-    },
-    atomic_heart = { -- polymer drop
-        frames = nfs({ "md_water_outline", "md_water" }), hold = 3, rest = nf("md_water"),
-        words = { "Polymerizing", "Kollektiv-syncing", "Neuro-linking" },
-    },
-}
+-- "nf:<name>" -> Nerd Font glyph, "card" -> the tarot card, anything else as is
+local function glyph(g)
+    if g == "card" then return CARD[1] end
+    if type(g) == "string" and g:sub(1, 3) == "nf:" then return nf(g:sub(4)) end
+    return tostring(g or "")
+end
+
+local function frames(f)
+    if f == "card" then return CARD end
+    local out = {}
+    for i, g in ipairs(type(f) == "table" and f or {}) do out[i] = glyph(g) end
+    if #out == 0 then out[1] = "·" end
+    return out
+end
+
+-- Spinner phrases (status.groups), grouped so each group gets a glyph that
+-- fits it. frames: animation; hold: ticks per frame; rest: the glyph shown
+-- when animations are off.
+local FEATURED = S.status.featured
+local FEATURED_ODDS = math.max(1, math.floor(S.status.featured_odds))
+local GROUPS = {}
+local names = {}
+for name in pairs(S.status.groups) do names[#names + 1] = name end
+table.sort(names) -- stable word order across reloads
 
 -- flat word list (featured excluded: it has its own odds) and word -> group
 local WORDS, GROUP_OF = {}, {}
-for _, name in ipairs({ "expanse", "mass_effect", "cyberpunk", "atomic_heart", "p3", "p4", "p5",
-    "persona", "smt", "proto" }) do
-    for _, w in ipairs(GROUPS[name].words) do
-        GROUP_OF[w] = GROUPS[name]
+for _, name in ipairs(names) do
+    local g = S.status.groups[name]
+    local group = {
+        frames = frames(g.frames),
+        hold = math.max(1, math.floor(tonumber(g.hold) or 1)),
+        rest = glyph(g.rest or (type(g.frames) == "table" and g.frames[1]) or g.frames),
+    }
+    GROUPS[name] = group
+    for _, w in ipairs(g.words or {}) do
+        GROUP_OF[w] = group
         if w ~= FEATURED then WORDS[#WORDS + 1] = w end
     end
 end
+local FALLBACK_GROUP = GROUP_OF[FEATURED] or GROUPS.proto or { frames = { "✻" }, hold = 1, rest = "✻" }
+if #WORDS == 0 then WORDS[1] = FEATURED end
 
-local WORD_SECONDS = 2 * 60 -- a new word every 2 minutes
+local WORD_SECONDS = math.max(1, S.status.word_seconds) -- a new word this often
 
 -- All animation advances in ticks of FAST_MS: one spinner frame, one shimmer
 -- character and one marquee character per tick, so nothing skips or jumps.
--- (measured: 120ms ~ +4.7% of a core, 200ms ~ +2.2%)
-local FAST_MS = 200   -- status refresh with animations
-local SLOW_MS = 1000  -- without: enough for the clock and cwd
-local DIR_MAX = 30    -- visible characters of the directory
+local FAST_MS = S.animation.tick_ms -- status refresh with animations
+local SLOW_MS = S.animation.idle_ms -- without: enough for the clock and cwd
+local DIR_MAX = S.status.dir_max    -- visible characters of the directory
 local MARQUEE_PAUSE = math.ceil(1500 / FAST_MS) -- ticks to rest at each end
 
 ---------------------------------------------------------------- helpers
@@ -174,10 +147,10 @@ end
 -- featured word ~1 in 5 periods, never the same word twice in a row
 local function raw_word(seed, period)
     local x = hash(seed, period)
-    if x % 5 == 0 then
+    if x % FEATURED_ODDS == 0 then
         return FEATURED
     end
-    return WORDS[(x // 5) % #WORDS + 1]
+    return WORDS[(x // FEATURED_ODDS) % #WORDS + 1]
 end
 
 local function pick_word(seed, period)
@@ -190,7 +163,7 @@ local function pick_word(seed, period)
 end
 
 -- fit into `width` cells, marking the cut with an ellipsis
--- current word period; LEADER w jumps to the next one and restarts its 2-minute timer
+-- current word period; LEADER w jumps to the next one and restarts its timer
 -- (GLOBAL survives config reloads)
 local function word_period(now)
     local G = wezterm.GLOBAL
@@ -298,7 +271,7 @@ function M.apply(config, theme, state)
     wezterm.GLOBAL.session_start = wezterm.GLOBAL.session_start or os.time()
 
     config.status_update_interval = animate and FAST_MS or SLOW_MS
-    config.tab_max_width = 40
+    config.tab_max_width = S.window.tab_max_width
 
     -- tabs: "▌0 name " (2 cells of decoration around the label)
     wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, hover, max_width)
@@ -343,6 +316,11 @@ function M.apply(config, theme, state)
         elseif window:active_key_table() == "move_tab" then
             badge, badge_bg = "MOVE  b n 0-9", ui.glow
         end
+        -- a broken or mistyped ~/.config/kazrc/wezterm.lua says so here
+        local trouble = kazrc.problem()
+        if not badge and trouble then
+            badge, badge_bg = "kazrc: " .. trouble .. "  (LEADER e)", ui.accent
+        end
         if badge then
             table.insert(left, { Background = { Color = badge_bg } })
             table.insert(left, { Foreground = { Color = ui.bg } })
@@ -354,7 +332,7 @@ function M.apply(config, theme, state)
         elseif state.activity ~= "off" then
             local elapsed = os.time() - wezterm.GLOBAL.session_start
             local word = pick_word(wezterm.GLOBAL.session_start, word_period(os.time()))
-            local g = GROUP_OF[word] or GROUPS.proto
+            local g = GROUP_OF[word] or FALLBACK_GROUP
             local frame = animate and g.frames[(k // g.hold) % #g.frames + 1] or g.rest
             table.insert(left, { Foreground = { Color = ui.shimmer[1] } })
             table.insert(left, { Text = " " .. frame .. " " })
@@ -372,15 +350,20 @@ function M.apply(config, theme, state)
 
         -- right: directory, then clock in the corner
         local dir = marquee(pane_dir(pane), DIR_MAX, k, animate)
-        window:set_right_status(wezterm.format({
+        local right = {
             { Background = { Color = ui.bg } },
             { Foreground = { Color = ui.muted } }, { Text = nf("md_folder_outline") .. " " },
             { Foreground = { Color = ui.fg } }, { Text = dir .. "  " },
-            { Background = { Color = ui.bg_active } },
-            { Foreground = { Color = ui.accent } }, { Text = "▌" },
-            { Foreground = { Color = ui.bright } }, { Attribute = { Intensity = "Bold" } },
-            { Text = wezterm.strftime("%H:%M") .. " " },
-        }))
+        }
+        if S.status.clock ~= "" then
+            for _, it in ipairs({
+                { Background = { Color = ui.bg_active } },
+                { Foreground = { Color = ui.accent } }, { Text = "▌" },
+                { Foreground = { Color = ui.bright } }, { Attribute = { Intensity = "Bold" } },
+                { Text = wezterm.strftime(S.status.clock) .. " " },
+            }) do right[#right + 1] = it end
+        end
+        window:set_right_status(wezterm.format(right))
     end)
 end
 

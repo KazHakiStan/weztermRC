@@ -42,7 +42,13 @@ function M.load()
     for k, v in pairs(data.idx or {}) do
         idx[legacy[k] or k] = v
     end
-    local shared = read_json(M.theme_file) or {}
+    local shared = read_json(M.theme_file)
+    if not shared then
+        -- moved into ~/.config/kazrc: carry the old file over once
+        shared = read_json(constants.paths.legacy_theme_file)
+        if shared and require("kazrc").ensure_dir() then write_json(M.theme_file, shared) end
+    end
+    shared = shared or {}
     local theme = shared.theme or data.theme
     return {
         theme = legacy[theme] or theme,
@@ -88,7 +94,7 @@ function M.current()
     if not themes.themes[s.theme] then
         s.theme = themes.default
     end
-    local pics = constants.list_pics(themes.get(s.theme).pics)
+    local pics = constants.list_pics(themes.pictures(s.theme))
     local i = wrap(s.idx[s.theme] or 1, #pics)
     s.idx[s.theme] = i
     s.pics = pics

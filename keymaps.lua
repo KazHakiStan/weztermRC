@@ -19,12 +19,20 @@ local function cycle_pic(_window, delta)
     wezterm.reload_configuration()
 end
 
+-- nvim through your login shell, so its PATH (Homebrew, Scoop) is there
+function M.editor_argv(file)
+    if wezterm.target_triple:find("windows") then
+        return { "pwsh.exe", "-NoLogo", "-Command", "nvim", file }
+    end
+    return { os.getenv("SHELL") or "/bin/zsh", "-lc", 'exec nvim "$1"', "nvim", file }
+end
+
 function M.keys()
     return {
         {
             mods = "LEADER",
             key = "t",
-            desc = "Cycle theme (ashen → aegis-lavender → aegis-gold → metaphor-light), synced with nvim",
+            desc = "Cycle theme (" .. table.concat(require("themes").order, " → ") .. "), synced with nvim",
             action = wezterm.action_callback(function(window, _pane)
                 toggle_theme(window)
             end),
