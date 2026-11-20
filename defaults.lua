@@ -98,6 +98,14 @@ return {
         clock = "%H:%M", -- strftime format; "" hides the clock
     },
 
+    updates = {
+        -- "release": new versions of this config (tags), "latest": every
+        -- commit on master, "off": no checks. The bar shows a new one,
+        -- LEADER u takes it.
+        follow = "release",
+        check_hours = 24, -- how often WezTerm looks, in the background
+    },
+
     animation = {
         tick_ms = 200, -- refresh with animations on (120 ms ~ +4.7% of a core, 200 ~ +2.2%)
         idle_ms = 1000, -- refresh with animations off

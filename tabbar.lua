@@ -1,4 +1,5 @@
--- Bottom bar: custom tab titles, activity line (left), cwd + clock (right).
+-- Bottom bar: custom tab titles, activity line (left), cwd + clock (right),
+-- and a new version of this config when there is one (updates.lua).
 --   LEADER ,   rename tab (empty input = automatic name)
 --   LEADER s   activity element: full -> compact (no time) -> off
 --   LEADER w   next activity word now (restarts its timer, status.word_seconds)
@@ -12,6 +13,7 @@ local M = {}
 -- settings: defaults.lua, overridden by ~/.config/kazrc/wezterm.lua
 local kazrc = require("kazrc")
 local S = kazrc.get()
+local updates = require("updates")
 
 local SHIMMER_WIDTH = S.animation.shimmer_width -- half-width of the band in characters
 
@@ -321,6 +323,12 @@ function M.apply(config, theme, state)
         if not badge and trouble then
             badge, badge_bg = "kazrc: " .. trouble .. "  (LEADER e)", ui.accent
         end
+        -- LEADER u's outcome, for a few seconds
+        updates.tick()
+        local update_note = updates.note()
+        if not badge and update_note then
+            badge, badge_bg = update_note, ui.glow
+        end
         if badge then
             table.insert(left, { Background = { Color = badge_bg } })
             table.insert(left, { Foreground = { Color = ui.bg } })
@@ -350,11 +358,21 @@ function M.apply(config, theme, state)
 
         -- right: directory, then clock in the corner
         local dir = marquee(pane_dir(pane), DIR_MAX, k, animate)
-        local right = {
-            { Background = { Color = ui.bg } },
+        local right = { { Background = { Color = ui.bg } } }
+        -- a new version of this config (updates.lua): LEADER u takes it
+        local new_version = updates.available()
+        if new_version then
+            for _, it in ipairs({
+                { Foreground = { Color = ui.accent } }, { Attribute = { Intensity = "Bold" } },
+                { Text = nf("md_arrow_up_circle") .. " " .. new_version .. " " },
+                "ResetAttributes", { Background = { Color = ui.bg } },
+                { Foreground = { Color = ui.muted } }, { Text = "LEADER u  " },
+            }) do right[#right + 1] = it end
+        end
+        for _, it in ipairs({
             { Foreground = { Color = ui.muted } }, { Text = nf("md_folder_outline") .. " " },
             { Foreground = { Color = ui.fg } }, { Text = dir .. "  " },
-        }
+        }) do right[#right + 1] = it end
         if S.status.clock ~= "" then
             for _, it in ipairs({
                 { Background = { Color = ui.bg_active } },
