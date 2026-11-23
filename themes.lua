@@ -137,6 +137,22 @@ M.themes = {
         active_tab    = "#9ef0cc",
         shimmer       = { "#35b88a", "#d8e070" }, -- jade lit by the eyes
     }),
+    -- Atomic Heart (the Twins): Soviet red, gold, chrome over violet-black
+    -- (assets/atomic-heart-glass.png, assets/src/atomic_heart.py)
+    ["atomic-heart"] = ashen_like({
+        pics          = "atomic-heart-glass", -- or "atomic-heart": not blurred (kazrc: themes.pictures)
+        bg_opacity    = 0.45,
+        accent        = "#c8283c", -- the red star
+        accent_bright = "#ec5464",
+        glow          = "#e0b562", -- gold jacket
+        smolder       = "#c8924a", -- brass
+        blue          = "#8fa3b8", -- steel
+        cursor        = "#e0b562",
+        selection     = "#5a1a24", -- deep crimson
+        split         = "#6b1f2a",
+        active_tab    = "#dcdbda", -- chrome
+        shimmer       = { "#c8283c", "#e0b562" }, -- red catching gold
+    }),
     -- LEGACY: gruvbox dark over a Silent Hunter 5 screenshot. To move into kazRC
     -- as a user theme (the test case for custom themes) and leave the defaults.
     ["silent-hunter"] = {

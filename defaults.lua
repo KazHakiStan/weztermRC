@@ -28,6 +28,7 @@ return {
             ["aegis-lavender"] = "aegis-lavender*",
             ["aegis-gold"] = "aegis-gold*",
             ["demifiend"] = "demifiend-glass", -- not blurred: "demifiend"
+            ["atomic-heart"] = "atomic-heart-glass", -- not blurred: "atomic-heart"
             ["metaphor-light"] = "metaphor-light*",
             ["silent-hunter"] = "silent-hunter*",
         },
