@@ -102,6 +102,7 @@ return {
             },
         },
         dir_max = 30, -- visible characters of the directory on the right
+        git = true, -- the git branch next to the directory, in a repo
         clock = "%H:%M", -- strftime format; "" hides the clock
     },
 

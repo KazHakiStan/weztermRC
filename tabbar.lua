@@ -1,5 +1,5 @@
--- Bottom bar: custom tab titles, activity line (left), cwd + clock (right),
--- and a new version of this config when there is one (updates.lua).
+-- Bottom bar: custom tab titles, activity line (left), cwd + git branch + clock
+-- (right), and a new version of this config when there is one (updates.lua).
 --   LEADER ,   rename tab (empty input = automatic name)
 --   LEADER s   activity element: full -> compact (no time) -> off
 --   LEADER w   next activity word now (restarts its timer, status.word_seconds)
@@ -76,6 +76,7 @@ local WORD_SECONDS = math.max(1, S.status.word_seconds) -- a new word this often
 local FAST_MS = S.animation.tick_ms -- status refresh with animations
 local SLOW_MS = S.animation.idle_ms -- without: enough for the clock and cwd
 local DIR_MAX = S.status.dir_max    -- visible characters of the directory
+local BRANCH_MAX = 24               -- and of its git branch
 local MARQUEE_PAUSE = math.ceil(1500 / FAST_MS) -- ticks to rest at each end
 
 ---------------------------------------------------------------- helpers
@@ -252,17 +253,52 @@ local function marquee(p, max, k, animate)
     return table.concat(cs, "", offset + 1, offset + max)
 end
 
--- cwd lookup can hit the OS, so cache it per pane for a second
+local function read_line(path)
+    local f = io.open(path, "r")
+    if not f then return nil end
+    local line = f:read("*l")
+    f:close()
+    return line
+end
+
+-- git branch of a directory, from .git/HEAD of the nearest repo above it (no
+-- git process); a .git file (submodule, worktree) points to the real one.
+-- Detached HEAD: the short commit.
+function M.git_branch(dir)
+    dir = dir:gsub("\\", "/"):gsub("/+$", "")
+    while dir and dir ~= "" do
+        local git = dir .. "/.git"
+        local head = read_line(git .. "/HEAD")
+        if not head then
+            local link = read_line(git)
+            local target = link and link:match("^gitdir:%s*(.-)%s*$")
+            if target then
+                if not (target:match("^/") or target:match("^%a:")) then target = dir .. "/" .. target end
+                head = read_line(target .. "/HEAD")
+            end
+        end
+        if head then
+            return head:match("^ref:%s*refs/heads/(.+)$") or head:match("^ref:%s*(.+)$") or head:sub(1, 7)
+        end
+        local up = dir:match("^(.*)/[^/]*$")
+        if up == dir then break end
+        dir = up
+    end
+    return nil
+end
+
+-- cwd and branch lookups hit the disk, so cache them per pane for a second
 local cwd_cache = {}
 local function pane_dir(pane)
     local id = pane:pane_id()
     local t = os.time()
     local c = cwd_cache[id]
-    if c and c.t == t then return c.dir end
+    if c and c.t == t then return c.dir, c.branch end
     local p = url_path(pane:get_current_working_dir())
     local dir = p and shorten(home_relative(p), DIR_MAX) or ""
-    cwd_cache[id] = { t = t, dir = dir }
-    return dir
+    local branch = (p and S.status.git) and M.git_branch(p) or nil
+    cwd_cache[id] = { t = t, dir = dir, branch = branch }
+    return dir, branch
 end
 
 ---------------------------------------------------------------- setup
@@ -356,8 +392,9 @@ function M.apply(config, theme, state)
         end
         window:set_left_status(wezterm.format(left))
 
-        -- right: directory, then clock in the corner
-        local dir = marquee(pane_dir(pane), DIR_MAX, k, animate)
+        -- right: directory and its git branch, then clock in the corner
+        local raw_dir, branch = pane_dir(pane)
+        local dir = marquee(raw_dir, DIR_MAX, k, animate)
         local right = { { Background = { Color = ui.bg } } }
         -- a new version of this config (updates.lua): LEADER u takes it
         local new_version = updates.available()
@@ -373,6 +410,12 @@ function M.apply(config, theme, state)
             { Foreground = { Color = ui.muted } }, { Text = nf("md_folder_outline") .. " " },
             { Foreground = { Color = ui.fg } }, { Text = dir .. "  " },
         }) do right[#right + 1] = it end
+        if branch then
+            for _, it in ipairs({
+                { Foreground = { Color = ui.muted } }, { Text = nf("dev_git_branch") .. " " },
+                { Foreground = { Color = ui.accent } }, { Text = fit(branch, BRANCH_MAX) .. "  " },
+            }) do right[#right + 1] = it end
+        end
         if S.status.clock ~= "" then
             for _, it in ipairs({
                 { Background = { Color = ui.bg_active } },
