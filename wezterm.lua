@@ -32,6 +32,8 @@ config.font_dirs = { constants.join(wezterm.config_dir, "fonts") }
 config.font = wezterm.font_with_fallback({ settings.font.family, "JetBrains Mono", "KazGlyphs" })
 config.line_height = settings.font.line_height
 
+config.scrollback_lines = settings.scroll.lines
+
 --- appearance
 config.window_decorations = settings.window.decorations
 config.hide_tab_bar_if_only_one_tab = false
@@ -67,6 +69,18 @@ for i = 0, 9 do
     } })
 end
 help.note("Tabs", "LEADER 0-9", "Go to tab N")
+
+do
+    local s = settings.scroll
+    local act = wezterm.action
+    bind("Scroll", {
+        { key = s.line_up.key, mods = s.line_up.mods, desc = "Scroll up a line", action = act.ScrollByLine(-1) },
+        { key = s.line_down.key, mods = s.line_down.mods, desc = "Scroll down a line", action = act.ScrollByLine(1) },
+        { key = s.top.key, mods = s.top.mods, desc = "Scroll to the top", action = act.ScrollToTop },
+        { key = s.bottom.key, mods = s.bottom.mods, desc = "Scroll to the bottom", action = act.ScrollToBottom },
+    })
+    help.note("Scroll", "SHIFT PageUp / PageDown", "Scroll a page (built in)")
+end
 
 bind("Theme", keymaps.keys())
 bind("Settings", { {

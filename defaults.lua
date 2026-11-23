@@ -114,6 +114,15 @@ return {
         check_hours = 24, -- how often WezTerm looks, in the background
     },
 
+    scroll = {
+        lines = 10000, -- history kept per pane (WezTerm's own default is 3500)
+        -- extra keys; Shift+PageUp / PageDown (a page) and the mouse wheel work anyway
+        line_up = { key = "UpArrow", mods = "SHIFT" },
+        line_down = { key = "DownArrow", mods = "SHIFT" },
+        top = { key = "Home", mods = "CTRL|SHIFT" }, -- not Shift+Home: pwsh selects text with it
+        bottom = { key = "End", mods = "CTRL|SHIFT" },
+    },
+
     animation = {
         tick_ms = 200, -- refresh with animations on (120 ms ~ +4.7% of a core, 200 ~ +2.2%)
         idle_ms = 1000, -- refresh with animations off
