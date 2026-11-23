@@ -171,6 +171,56 @@ M.themes = {
         active_tab    = "#cbdbfe",
         shimmer       = { "#4a9fe0", "#cbdbfe" }, -- blue flaring white
     }),
+    -- SMT V: Vengeance, Taito: ultramarine and shafts of cyan light
+    -- (assets/smtvv-taito.png, assets/src/picture.py)
+    ["smtvv-taito"] = ashen_like({
+        pics          = "smtvv-taito", -- or "smtvv-taito-glass": blurred (kazrc: themes.pictures)
+        bg_opacity    = 0.5,
+        accent        = "#6f8cff", -- ultramarine
+        accent_bright = "#b0c4ff",
+        glow          = "#7fe0f0", -- the light shafts
+        smolder       = "#e8d8a0", -- pale sand
+        blue          = "#4fb0e0",
+        cursor        = "#a0d7ed",
+        selection     = "#232a6e", -- deep ultramarine
+        split         = "#3a4fb6",
+        active_tab    = "#e0f6f9",
+        shimmer       = { "#6f8cff", "#e0f6f9" }, -- blue lit white
+    }),
+    -- Persona 4, the Midnight Channel studio: TV yellow, stage amber
+    -- (assets/persona4-tv.png, assets/src/picture.py)
+    ["persona4-tv"] = ashen_like({
+        pics          = "persona4-tv", -- or "persona4-tv-glass": blurred (kazrc: themes.pictures)
+        bg_opacity    = 0.35,     -- a very bright picture
+        align         = "Center",
+        accent        = "#f4c430", -- Persona 4 yellow
+        accent_bright = "#fbf250", -- the screens
+        glow          = "#ffe89a", -- stage light
+        smolder       = "#e8873a", -- amber
+        blue          = "#5aa0d8", -- the screens' blue
+        cursor        = "#fbf250",
+        selection     = "#5a4515", -- dark gold
+        split         = "#76561d",
+        active_tab    = "#fbf250",
+        shimmer       = { "#d6a92c", "#fbf250" }, -- gold flaring yellow
+    }),
+    -- Cyberpunk 2077: Phantom Liberty, Songbird before the red sphere: neon
+    -- red, netrunner cyan (assets/cyberpunk-songbird.png, assets/src/picture.py)
+    ["cyberpunk-songbird"] = ashen_like({
+        pics          = "cyberpunk-songbird", -- or "cyberpunk-songbird-glass": blurred (kazrc: themes.pictures)
+        bg_opacity    = 0.8,      -- a very dark picture
+        align         = "Center", -- she stands before the sphere
+        accent        = "#e62e4b", -- neon red
+        accent_bright = "#ff6a7e",
+        glow          = "#5fc8d8", -- netrunner cyan
+        smolder       = "#e8d44a", -- Cyberpunk yellow
+        blue          = "#3f8fa8", -- cable teal
+        cursor        = "#5fc8d8",
+        selection     = "#562b2e", -- dark red
+        split         = "#982129",
+        active_tab    = "#5fc8d8",
+        shimmer       = { "#e62e4b", "#5fc8d8" }, -- red glitching to cyan
+    }),
     -- LEGACY: gruvbox dark over a Silent Hunter 5 screenshot. To move into kazRC
     -- as a user theme (the test case for custom themes) and leave the defaults.
     ["silent-hunter"] = {

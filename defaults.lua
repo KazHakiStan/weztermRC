@@ -30,6 +30,9 @@ return {
             ["demifiend"] = "demifiend-glass", -- not blurred: "demifiend"
             ["atomic-heart"] = "atomic-heart-glass", -- not blurred: "atomic-heart"
             ["illusive-man"] = "illusive-man-glass", -- not blurred: "illusive-man"
+            ["smtvv-taito"] = "smtvv-taito", -- blurred: "smtvv-taito-glass"
+            ["persona4-tv"] = "persona4-tv", -- blurred: "persona4-tv-glass"
+            ["cyberpunk-songbird"] = "cyberpunk-songbird", -- blurred: "cyberpunk-songbird-glass"
             ["metaphor-light"] = "metaphor-light*",
             ["silent-hunter"] = "silent-hunter*",
         },

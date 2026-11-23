@@ -11,6 +11,7 @@ Scripts that produced the theme backgrounds in `assets/`. They need Python with
 | `demifiend.py SRC OUT_DIR [--upscale]` | `demifiend.png`, `demifiend-glass.png` | clean: big bright patches toned down, markings and eyes left glowing; glass: lightly blurred like macOS window vibrancy (`--blur=`, default 0.002). `--upscale` deblocks and doubles a small compressed source. Previews at `OPACITY` (default 0.65, as the theme) |
 | `atomic_heart.py SRC OUT_DIR [--blur=0.002]` | `atomic-heart.png`, `atomic-heart-glass.png` | 5K key art -> 2560x1440, brightest highlights eased; glass: lightly blurred like demifiend-glass; preview at `OPACITY` (default 0.45, as the theme) |
 | `illusive_man.py SRC OUT_DIR [--blur=0.002]` | `illusive-man.png`, `illusive-man-glass.png` | the bright star toned down (local brightness) so text reads over it, silhouette kept; glass as demifiend-glass; preview at `OPACITY` (default 0.5, as the theme) |
+| `picture.py SRC OUT_DIR NAME [--width= --damp= --knee= --blur= --opacity= --kw= --str=]` | `NAME.png`, `NAME-glass.png` | any picture, the general form of the scripts above: bright areas toned down, glass lightly blurred. `smtvv-taito`: `--damp=0.3 --knee=0.6 --opacity=0.5`; `persona4-tv`: `--width=2000 --damp=0.5 --knee=0.5 --opacity=0.35`; `cyberpunk-songbird`: `--width=2560 --damp=0 --knee=0.75 --opacity=0.8` |
 | `parchment.py [OUT_DIR]` | `parchment-*.png` | procedural parchment + linework; also the module `light_ornate.py` imports |
 
 Every script also writes `*-preview.png` with mock gruvbox code on top, to check

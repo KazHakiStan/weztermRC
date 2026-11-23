@@ -19,7 +19,7 @@ M.themes_file = join(M.dir, "themes.lua")
 -- Shared with nvim through ~/.config/kazrc/themes.lua (neovimRC writes the
 -- same template; keep these defaults in step with its kazrc.lua).
 local THEME_DEFAULTS = {
-    order = { "ashen", "aegis-lavender", "aegis-gold", "demifiend", "atomic-heart", "illusive-man", "metaphor-light", "silent-hunter" },
+    order = { "ashen", "aegis-lavender", "aegis-gold", "demifiend", "atomic-heart", "illusive-man", "smtvv-taito", "persona4-tv", "cyberpunk-songbird", "metaphor-light", "silent-hunter" },
     default = "ashen",
 }
 local THEMES_TEMPLATE = table.concat({
@@ -28,7 +28,7 @@ local THEMES_TEMPLATE = table.concat({
     "-- save, nvim on the next start.",
     "return {",
     "--     -- LEADER t (WezTerm) and :Theme (nvim) cycle through these",
-    '--     order = { "ashen", "aegis-lavender", "aegis-gold", "demifiend", "atomic-heart", "illusive-man", "metaphor-light", "silent-hunter" },',
+    '--     order = { "ashen", "aegis-lavender", "aegis-gold", "demifiend", "atomic-heart", "illusive-man", "smtvv-taito", "persona4-tv", "cyberpunk-songbird", "metaphor-light", "silent-hunter" },',
     "--     -- the theme before any is chosen",
     '--     default = "ashen",',
     "}",
