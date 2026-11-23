@@ -34,7 +34,8 @@ local function ashen_like(a)
     }
     return {
         pics = a.pics,
-        bg_opacity = 0.4,
+        bg_opacity = a.bg_opacity or 0.4,
+        align = a.align,
         background = "#000000",
         -- tab bar / status colors (tabbar.lua)
         ui = {
@@ -118,6 +119,23 @@ M.themes = {
         split         = "#7a5a24",
         active_tab    = "#f2e6c4",
         shimmer       = { "#d4a13f", "#fff3d0" }, -- gold catching the light
+    }),
+    -- Demi-fiend (SMT V: Vengeance): night-green city, jade markings, the
+    -- chartreuse glow of his eyes (assets/demifiend-glass.png, assets/src/demifiend.py)
+    ["demifiend"] = ashen_like({
+        pics          = "demifiend-glass", -- or "demifiend": not blurred (kazrc: themes.pictures)
+        bg_opacity    = 0.65,     -- a dark picture, pre-toned for text
+        align         = "Center", -- he stands in the middle
+        accent        = "#35b88a", -- jade markings
+        accent_bright = "#9ef0cc", -- their mint glow
+        glow          = "#d8e070", -- the eyes
+        smolder       = "#e6c85a", -- gold-yellow
+        blue          = "#5a9fd4", -- Pixie's blue
+        cursor        = "#d8e070",
+        selection     = "#174a35", -- deep jade
+        split         = "#1f5a42",
+        active_tab    = "#9ef0cc",
+        shimmer       = { "#35b88a", "#d8e070" }, -- jade lit by the eyes
     }),
     -- LEGACY: gruvbox dark over a Silent Hunter 5 screenshot. To move into kazRC
     -- as a user theme (the test case for custom themes) and leave the defaults.

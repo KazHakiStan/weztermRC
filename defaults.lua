@@ -27,6 +27,7 @@ return {
             ["ashen"] = "aegis-red*",
             ["aegis-lavender"] = "aegis-lavender*",
             ["aegis-gold"] = "aegis-gold*",
+            ["demifiend"] = "demifiend-glass", -- not blurred: "demifiend"
             ["metaphor-light"] = "metaphor-light*",
             ["silent-hunter"] = "silent-hunter*",
         },
