@@ -153,6 +153,24 @@ M.themes = {
         active_tab    = "#dcdbda", -- chrome
         shimmer       = { "#c8283c", "#e0b562" }, -- red catching gold
     }),
+    -- The Illusive Man before his star (Mass Effect 2): Paragon blue, ice,
+    -- the ember of his cigarette (assets/illusive-man-glass.png,
+    -- assets/src/illusive_man.py)
+    ["illusive-man"] = ashen_like({
+        pics          = "illusive-man-glass", -- or "illusive-man": not blurred (kazrc: themes.pictures)
+        bg_opacity    = 0.5,
+        align         = "Center", -- he sits in the middle of the star
+        accent        = "#4a9fe0", -- Paragon blue
+        accent_bright = "#a4cef9", -- the star's ice
+        glow          = "#7fd8f0", -- cyan corona
+        smolder       = "#e8a050", -- cigarette ember
+        blue          = "#7a8ce0", -- indigo
+        cursor        = "#a4cef9",
+        selection     = "#1f3152", -- deep space blue
+        split         = "#2e476c",
+        active_tab    = "#cbdbfe",
+        shimmer       = { "#4a9fe0", "#cbdbfe" }, -- blue flaring white
+    }),
     -- LEGACY: gruvbox dark over a Silent Hunter 5 screenshot. To move into kazRC
     -- as a user theme (the test case for custom themes) and leave the defaults.
     ["silent-hunter"] = {
