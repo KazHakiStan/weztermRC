@@ -21,6 +21,21 @@ M.themes_file = join(M.dir, "themes.lua")
 local THEME_DEFAULTS = {
     order = { "ashen", "aegis-lavender", "aegis-gold", "demifiend", "atomic-heart", "illusive-man", "smtvv-taito", "persona4-tv", "cyberpunk-songbird", "metaphor-light", "silent-hunter" },
     default = "ashen",
+    -- short names by colour: :T mint = :T demifiend. Themes that share one form
+    -- a group: :T blue / LEADER t ask which, LEADER [ ] go through the group
+    aliases = {
+        ["ashen"] = "red",
+        ["aegis-lavender"] = "lavender",
+        ["aegis-gold"] = "gold",
+        ["demifiend"] = "mint",
+        ["atomic-heart"] = "crimson",
+        ["illusive-man"] = "blue",
+        ["smtvv-taito"] = "blue",
+        ["persona4-tv"] = "yellow",
+        ["cyberpunk-songbird"] = "red",
+        ["metaphor-light"] = "light",
+        ["silent-hunter"] = "gruvbox",
+    },
     -- themes with a blurred (-glass) picture, and whether it is on by default;
     -- :T blur (nvim) and LEADER g (WezTerm) switch it for the current theme
     glass = {
@@ -37,10 +52,17 @@ local THEMES_TEMPLATE = table.concat({
     "-- defaults, commented out: uncomment what you change. WezTerm applies it on",
     "-- save, nvim on the next start.",
     "return {",
-    "--     -- LEADER t (WezTerm) and :Theme (nvim) cycle through these",
+    "--     -- the order of LEADER t (WezTerm) and :T (nvim) lists",
     '--     order = { "ashen", "aegis-lavender", "aegis-gold", "demifiend", "atomic-heart", "illusive-man", "smtvv-taito", "persona4-tv", "cyberpunk-songbird", "metaphor-light", "silent-hunter" },',
     "--     -- the theme before any is chosen",
     '--     default = "ashen",',
+    "--     -- short names by colour; themes sharing one form a group (:T blue, LEADER [ ])",
+    "--     aliases = {",
+    '--         ["ashen"] = "red", ["aegis-lavender"] = "lavender", ["aegis-gold"] = "gold",',
+    '--         ["demifiend"] = "mint", ["atomic-heart"] = "crimson", ["illusive-man"] = "blue",',
+    '--         ["smtvv-taito"] = "blue", ["persona4-tv"] = "yellow", ["cyberpunk-songbird"] = "red",',
+    '--         ["metaphor-light"] = "light", ["silent-hunter"] = "gruvbox",',
+    "--     },",
     "--     -- themes with a blurred (-glass) picture, and whether it is on by default;",
     "--     -- :T blur (nvim) and LEADER g (WezTerm) switch it for the current theme",
     "--     glass = {",
@@ -52,7 +74,7 @@ local THEMES_TEMPLATE = table.concat({
 }, "\n")
 
 -- tables whose keys are yours to add (theme names, word groups)
-local OPEN = { ["themes.pictures"] = true, ["status.groups"] = true }
+local OPEN = { ["themes.pictures"] = true, ["status.groups"] = true, ["themes.aliases"] = true }
 
 local problems = {}
 local function problem(msg)

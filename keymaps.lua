@@ -9,9 +9,44 @@ local M = {}
 
 -- state lives in files; the config is rebuilt from them on reload
 -- (nvim writes the same theme file, which also triggers a reload)
-local function toggle_theme(_window)
-    state_store.cycle_theme(1)
-    wezterm.reload_configuration()
+
+-- every theme in a fuzzy list: "* demifiend (mint)  · blur", like nvim's :T
+local function choose_theme(window, pane)
+    local themes = require("themes")
+    local aliases = require("kazrc").themes().aliases
+    local s = state_store.current()
+    local choices = {}
+    for _, n in ipairs(themes.order) do
+        local glass = state_store.glass_on(s, n)
+        choices[#choices + 1] = {
+            id = n,
+            label = (n == s.theme and "* " or "  ") .. n .. (aliases[n] and (" (" .. aliases[n] .. ")") or "")
+                .. (glass == nil and "" or (glass and "  · blur" or "  · blur off")),
+        }
+    end
+    window:perform_action(wezterm.action.InputSelector({
+        title = "Theme",
+        fuzzy = true,
+        fuzzy_description = "Theme (type a name or colour, Enter = set, Esc = close): ",
+        choices = choices,
+        action = wezterm.action_callback(function(_win, _p, id)
+            if id then
+                state_store.set_theme(id)
+                wezterm.reload_configuration()
+            end
+        end),
+    }), pane)
+end
+
+-- through the themes of the current colour group (blue: illusive-man, smtvv-taito)
+local function cycle_group(window, delta)
+    if state_store.cycle_group(delta) then
+        wezterm.reload_configuration()
+    else
+        local _, alias, current = state_store.group()
+        window:toast_notification("WezTerm", alias and ("no other " .. alias .. " theme")
+            or (current .. " has no colour group"), nil, 3000)
+    end
 end
 
 local function toggle_glass(window)
@@ -20,11 +55,6 @@ local function toggle_glass(window)
     else
         window:toast_notification("WezTerm", "this theme has no blurred picture", nil, 3000)
     end
-end
-
-local function cycle_pic(_window, delta)
-    state_store.cycle_pic(delta)
-    wezterm.reload_configuration()
 end
 
 -- nvim through your login shell, so its PATH (Homebrew, Scoop) is there
@@ -40,10 +70,8 @@ function M.keys()
         {
             mods = "LEADER",
             key = "t",
-            desc = "Cycle theme (" .. table.concat(require("themes").order, " → ") .. "), synced with nvim",
-            action = wezterm.action_callback(function(window, _pane)
-                toggle_theme(window)
-            end),
+            desc = "Choose a theme (type a name or colour), synced with nvim",
+            action = wezterm.action_callback(choose_theme),
         },
         {
             mods = "LEADER",
@@ -53,26 +81,35 @@ function M.keys()
                 toggle_glass(window)
             end),
         },
-        -- TODO: picture cycling (LEADER [ / ]) comes back on top of the new theme
-        -- system (several pictures per theme in kazrc). Off until then: every
-        -- default theme has one picture now.
-        -- {
-        --     mods = "LEADER",
-        --     key = "]",
-        --     desc = "Next background picture",
-        --     action = wezterm.action_callback(function(window, _pane)
-        --         cycle_pic(window, 1)
-        --     end),
-        -- },
-        -- {
-        --     mods = "LEADER",
-        --     key = "[",
-        --     desc = "Previous background picture",
-        --     action = wezterm.action_callback(function(window, _pane)
-        --         cycle_pic(window, -1)
-        --     end),
-        -- },
+        {
+            mods = "LEADER",
+            key = "]",
+            desc = "Next theme of the same colour (blue: illusive-man → smtvv-taito)",
+            action = wezterm.action_callback(function(window, _pane) cycle_group(window, 1) end),
+        },
+        {
+            mods = "LEADER",
+            key = "[",
+            desc = "Previous theme of the same colour",
+            action = wezterm.action_callback(function(window, _pane) cycle_group(window, -1) end),
+        },
     }
+end
+
+-- Ctrl-h/j/k/l: one set of keys for nvim splits and WezTerm panes. nvim
+-- tells WezTerm it is running (user var IS_NVIM, neovimRC) and gets the key,
+-- moving to the pane beyond itself at its edge; a shell pane gets it too when
+-- there is no pane that way (Ctrl-l still clears, Ctrl-k still kills)
+local function navigate(key, dir)
+    local act = wezterm.action
+    return wezterm.action_callback(function(window, pane)
+        local tab = pane:tab()
+        if pane:get_user_vars().IS_NVIM == "true" or not (tab and tab:get_pane_direction(dir)) then
+            window:perform_action(act.SendKey({ key = key, mods = "CTRL" }), pane)
+        else
+            window:perform_action(act.ActivatePaneDirection(dir), pane)
+        end
+    end)
 end
 
 function M.remaps()
@@ -114,6 +151,14 @@ function M.remaps()
           action = act.AdjustPaneSize({ "Down", 2 }) },
         { mods = "LEADER", key = "UpArrow", section = "Panes", desc = "Resize: move edge up",
           action = act.AdjustPaneSize({ "Up", 2 }) },
+        { mods = "CTRL", key = "h", section = "Panes", desc = "Left: nvim split or pane, one set of keys",
+          action = navigate("h", "Left") },
+        { mods = "CTRL", key = "j", section = "Panes", desc = "Down: nvim split or pane",
+          action = navigate("j", "Down") },
+        { mods = "CTRL", key = "k", section = "Panes", desc = "Up: nvim split or pane",
+          action = navigate("k", "Up") },
+        { mods = "CTRL", key = "l", section = "Panes", desc = "Right: nvim split or pane",
+          action = navigate("l", "Right") },
     }
 end
 

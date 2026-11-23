@@ -112,15 +112,35 @@ function M.current()
     return s
 end
 
-function M.cycle_theme(delta)
+function M.set_theme(name)
+    local s = M.current()
+    s.theme = name
+    M.save(s)
+end
+
+-- the themes that share the current theme's alias (kazrc themes.lua aliases),
+-- in theme order: { names }, alias
+function M.group()
     local themes = require("themes")
     local s = M.current()
-    local pos = 1
-    for i, name in ipairs(themes.order) do
-        if name == s.theme then pos = i end
+    local alias = require("kazrc").themes().aliases[s.theme]
+    local names = {}
+    for _, n in ipairs(themes.order) do
+        if alias and require("kazrc").themes().aliases[n] == alias then names[#names + 1] = n end
     end
-    s.theme = themes.order[wrap(pos + delta, #themes.order)]
-    M.save(s)
+    return names, alias, s.theme
+end
+
+-- next / previous theme of the current theme's group; false if it is alone
+function M.cycle_group(delta)
+    local names, _, current = M.group()
+    if #names < 2 then return false end
+    local pos = 1
+    for i, n in ipairs(names) do
+        if n == current then pos = i end
+    end
+    M.set_theme(names[wrap(pos + delta, #names)])
+    return true
 end
 
 -- blur on/off for the current theme; false when it has no blurred picture
@@ -133,11 +153,5 @@ function M.toggle_glass()
     return true
 end
 
-function M.cycle_pic(delta)
-    local s = M.current()
-    if #s.pics == 0 then return end
-    s.idx[s.theme] = wrap(s.idx[s.theme] + delta, #s.pics)
-    M.save(s)
-end
 
 return M

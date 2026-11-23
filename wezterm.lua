@@ -76,6 +76,7 @@ bind("Settings", { {
     action = wezterm.action.SpawnCommandInNewTab({ args = keymaps.editor_argv(kazrc.file) }),
 } })
 bind("Settings", require("updates").keys())
+bind("Projects", require("projects").keys())
 config.key_tables = keymaps.key_tables()
 
 -- theme: rebuilt from state files on every config load.
