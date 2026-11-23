@@ -22,17 +22,18 @@ return {
     themes = {
         -- order and default: ~/.config/kazrc/themes.lua, shared with nvim
         -- background picture per theme: a glob in assets/ or a path of your
-        -- own, e.g. ashen = "~/Pictures/walls/red.jpg"
+        -- own, e.g. ashen = "~/Pictures/walls/red.jpg"; blur (a <glob>-glass
+        -- picture next to it) switches with LEADER g
         pictures = {
             ["ashen"] = "aegis-red*",
             ["aegis-lavender"] = "aegis-lavender*",
             ["aegis-gold"] = "aegis-gold*",
-            ["demifiend"] = "demifiend-glass", -- not blurred: "demifiend"
-            ["atomic-heart"] = "atomic-heart-glass", -- not blurred: "atomic-heart"
-            ["illusive-man"] = "illusive-man-glass", -- not blurred: "illusive-man"
-            ["smtvv-taito"] = "smtvv-taito", -- blurred: "smtvv-taito-glass"
-            ["persona4-tv"] = "persona4-tv", -- blurred: "persona4-tv-glass"
-            ["cyberpunk-songbird"] = "cyberpunk-songbird", -- blurred: "cyberpunk-songbird-glass"
+            ["demifiend"] = "demifiend",
+            ["atomic-heart"] = "atomic-heart",
+            ["illusive-man"] = "illusive-man",
+            ["smtvv-taito"] = "smtvv-taito",
+            ["persona4-tv"] = "persona4-tv",
+            ["cyberpunk-songbird"] = "cyberpunk-songbird",
             ["metaphor-light"] = "metaphor-light*",
             ["silent-hunter"] = "silent-hunter*",
         },

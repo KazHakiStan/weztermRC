@@ -121,9 +121,9 @@ M.themes = {
         shimmer       = { "#d4a13f", "#fff3d0" }, -- gold catching the light
     }),
     -- Demi-fiend (SMT V: Vengeance): night-green city, jade markings, the
-    -- chartreuse glow of his eyes (assets/demifiend-glass.png, assets/src/demifiend.py)
+    -- chartreuse glow of his eyes (assets/demifiend.png, assets/src/demifiend.py)
     ["demifiend"] = ashen_like({
-        pics          = "demifiend-glass", -- or "demifiend": not blurred (kazrc: themes.pictures)
+        pics          = "demifiend", -- blurred: demifiend-glass (kazrc themes.lua glass)
         bg_opacity    = 0.65,     -- a dark picture, pre-toned for text
         align         = "Center", -- he stands in the middle
         accent        = "#35b88a", -- jade markings
@@ -138,9 +138,9 @@ M.themes = {
         shimmer       = { "#35b88a", "#d8e070" }, -- jade lit by the eyes
     }),
     -- Atomic Heart (the Twins): Soviet red, gold, chrome over violet-black
-    -- (assets/atomic-heart-glass.png, assets/src/atomic_heart.py)
+    -- (assets/atomic-heart.png, assets/src/atomic_heart.py)
     ["atomic-heart"] = ashen_like({
-        pics          = "atomic-heart-glass", -- or "atomic-heart": not blurred (kazrc: themes.pictures)
+        pics          = "atomic-heart", -- blurred: atomic-heart-glass (kazrc themes.lua glass)
         bg_opacity    = 0.45,
         accent        = "#c8283c", -- the red star
         accent_bright = "#ec5464",
@@ -154,10 +154,10 @@ M.themes = {
         shimmer       = { "#c8283c", "#e0b562" }, -- red catching gold
     }),
     -- The Illusive Man before his star (Mass Effect 2): Paragon blue, ice,
-    -- the ember of his cigarette (assets/illusive-man-glass.png,
+    -- the ember of his cigarette (assets/illusive-man.png,
     -- assets/src/illusive_man.py)
     ["illusive-man"] = ashen_like({
-        pics          = "illusive-man-glass", -- or "illusive-man": not blurred (kazrc: themes.pictures)
+        pics          = "illusive-man", -- blurred: illusive-man-glass (kazrc themes.lua glass)
         bg_opacity    = 0.5,
         align         = "Center", -- he sits in the middle of the star
         accent        = "#4a9fe0", -- Paragon blue
@@ -174,7 +174,7 @@ M.themes = {
     -- SMT V: Vengeance, Taito: ultramarine and shafts of cyan light
     -- (assets/smtvv-taito.png, assets/src/picture.py)
     ["smtvv-taito"] = ashen_like({
-        pics          = "smtvv-taito", -- or "smtvv-taito-glass": blurred (kazrc: themes.pictures)
+        pics          = "smtvv-taito", -- blurred: smtvv-taito-glass (kazrc themes.lua glass)
         bg_opacity    = 0.5,
         accent        = "#6f8cff", -- ultramarine
         accent_bright = "#b0c4ff",
@@ -190,7 +190,7 @@ M.themes = {
     -- Persona 4, the Midnight Channel studio: TV yellow, stage amber
     -- (assets/persona4-tv.png, assets/src/picture.py)
     ["persona4-tv"] = ashen_like({
-        pics          = "persona4-tv", -- or "persona4-tv-glass": blurred (kazrc: themes.pictures)
+        pics          = "persona4-tv", -- blurred: persona4-tv-glass (kazrc themes.lua glass)
         bg_opacity    = 0.35,     -- a very bright picture
         align         = "Center",
         accent        = "#f4c430", -- Persona 4 yellow
@@ -207,7 +207,7 @@ M.themes = {
     -- Cyberpunk 2077: Phantom Liberty, Songbird before the red sphere: neon
     -- red, netrunner cyan (assets/cyberpunk-songbird.png, assets/src/picture.py)
     ["cyberpunk-songbird"] = ashen_like({
-        pics          = "cyberpunk-songbird", -- or "cyberpunk-songbird-glass": blurred (kazrc: themes.pictures)
+        pics          = "cyberpunk-songbird", -- blurred: cyberpunk-songbird-glass (kazrc themes.lua glass)
         bg_opacity    = 0.8,      -- a very dark picture
         align         = "Center", -- she stands before the sphere
         accent        = "#e62e4b", -- neon red
@@ -390,9 +390,14 @@ function M.get(theme_name)
     return M.themes[theme_name] or M.themes[M.default] or M.themes.ashen
 end
 
--- background pictures of a theme: the setting, else the theme's own glob
-function M.pictures(theme_name)
-    return settings.pictures[theme_name] or M.get(theme_name).pics
+-- background pictures of a theme: the setting, else the theme's own glob;
+-- with glass, its blurred version (<glob>-glass) when there is one
+function M.pictures(theme_name, glass)
+    local glob = settings.pictures[theme_name] or M.get(theme_name).pics
+    if glass and #require("constants").list_pics(glob .. "-glass") > 0 then
+        return glob .. "-glass"
+    end
+    return glob
 end
 
 function M.build(theme_name, bg_file)

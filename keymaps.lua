@@ -14,6 +14,14 @@ local function toggle_theme(_window)
     wezterm.reload_configuration()
 end
 
+local function toggle_glass(window)
+    if state_store.toggle_glass() then
+        wezterm.reload_configuration()
+    else
+        window:toast_notification("WezTerm", "this theme has no blurred picture", nil, 3000)
+    end
+end
+
 local function cycle_pic(_window, delta)
     state_store.cycle_pic(delta)
     wezterm.reload_configuration()
@@ -35,6 +43,14 @@ function M.keys()
             desc = "Cycle theme (" .. table.concat(require("themes").order, " → ") .. "), synced with nvim",
             action = wezterm.action_callback(function(window, _pane)
                 toggle_theme(window)
+            end),
+        },
+        {
+            mods = "LEADER",
+            key = "g",
+            desc = "Blur the background picture on/off (themes that have one), synced with nvim",
+            action = wezterm.action_callback(function(window, _pane)
+                toggle_glass(window)
             end),
         },
         -- TODO: picture cycling (LEADER [ / ]) comes back on top of the new theme
