@@ -61,7 +61,10 @@ end
 
 function M.save(state)
     write_json(state_path, { idx = state.idx, animate = state.animate, activity = state.activity })
-    write_json(M.theme_file, { theme = state.theme, glass = state.glass })
+    -- keep what nvim keeps there too (clean = its clean mode)
+    local shared = read_json(M.theme_file) or {}
+    shared.theme, shared.glass = state.theme, state.glass
+    write_json(M.theme_file, shared)
 end
 
 function M.toggle_animate()
