@@ -11,26 +11,34 @@ M.default = kazrc.themes().default
 -- Dark themes built on the ashen layout: grayscale base + accent set.
 -- ANSI slots follow ashen.nvim's terminal map (ashen/variants/default/ansi.lua),
 -- except black, which ashen sets to the background (invisible); g_7 is used instead.
+-- ashen.nvim's grayscale; a theme can pass its own (a.grays) tinted toward its accent
+local ashen_grays = {
+    g_1 = "#e5e5e5", g_2 = "#d5d5d5", g_3 = "#b4b4b4", g_4 = "#a7a7a7", g_5 = "#949494",
+    g_6 = "#737373", g_7 = "#535353", bg = "#121212", bg_active = "#222222", line_nr = "#aaaaaa",
+}
+
 local function ashen_like(a)
+    local g = setmetatable(a.grays or {}, { __index = ashen_grays })
     local ansi = {
-        "#535353",       -- black   (g_7)
+        g.g_7,           -- black   (g_7)
         a.accent,        -- red     (red_ember)
         a.glow,          -- green   (orange_glow)
         a.smolder,       -- yellow  (orange_smolder)
         a.blue,          -- blue
-        "#a7a7a7",       -- magenta (g_4)
-        "#b4b4b4",       -- cyan    (g_3)
-        "#d5d5d5",       -- white   (g_2)
+        g.g_4,           -- magenta (g_4)
+        g.g_3,           -- cyan    (g_3)
+        g.g_2,           -- white   (g_2)
     }
     local brights = {
-        "#949494",       -- black   (g_5)
+        g.g_6,           -- black   (g_6; ashen has g_5, too light under white text,
+                         -- e.g. Claude Code dark-ansi prompt background)
         a.accent_bright, -- red     (red_glowing)
         a.glow,
         a.smolder,
         a.blue,
-        "#a7a7a7",
-        "#b4b4b4",
-        "#e5e5e5",       -- white   (g_1)
+        g.g_4,
+        g.g_3,
+        g.g_1,           -- white   (g_1)
     }
     return {
         pics = a.pics,
@@ -39,10 +47,10 @@ local function ashen_like(a)
         background = "#000000",
         -- tab bar / status colors (tabbar.lua)
         ui = {
-            bg = "#121212",
-            bg_active = "#222222",
-            fg = "#d5d5d5",
-            muted = "#737373",
+            bg = g.bg,
+            bg_active = g.bg_active,
+            fg = g.g_2,
+            muted = g.g_6,
             accent = a.accent,
             bright = a.accent_bright,
             glow = a.glow,
@@ -50,7 +58,7 @@ local function ashen_like(a)
         },
         colors = {
             foreground = "#ffffff",
-            background = "#121212",
+            background = g.bg,
 
             cursor_fg = "#000000",
             cursor_bg = a.cursor,
@@ -59,19 +67,19 @@ local function ashen_like(a)
             selection_fg = "#ffffff",
             selection_bg = a.selection,
 
-            scrollbar_thumb = "#535353",
+            scrollbar_thumb = g.g_7,
             split = a.split,
 
             ansi = ansi,
             brights = brights,
 
             tab_bar = {
-                background = "#121212",
-                active_tab = { bg_color = "#222222", fg_color = a.active_tab },
-                inactive_tab = { bg_color = "#121212", fg_color = a.accent },
-                inactive_tab_hover = { bg_color = "#222222", fg_color = a.accent },
-                new_tab = { bg_color = "#121212", fg_color = a.accent },
-                new_tab_hover = { bg_color = "#222222", fg_color = a.accent },
+                background = g.bg,
+                active_tab = { bg_color = g.bg_active, fg_color = a.active_tab },
+                inactive_tab = { bg_color = g.bg, fg_color = a.accent },
+                inactive_tab_hover = { bg_color = g.bg_active, fg_color = a.accent },
+                new_tab = { bg_color = g.bg, fg_color = a.accent },
+                new_tab_hover = { bg_color = g.bg_active, fg_color = a.accent },
             },
         },
     }
@@ -136,6 +144,12 @@ M.themes = {
         split         = "#1f5a42",
         active_tab    = "#9ef0cc",
         shimmer       = { "#35b88a", "#d8e070" }, -- jade lit by the eyes
+        -- ashen's grays tinted toward the jade (same OKLab lightness, chroma 0.02);
+        -- shared with nvim's demifiend palette (g_*)
+        grays = {
+            g_1 = "#dee8e3", g_2 = "#cdd8d3", g_3 = "#aab8b1", g_4 = "#9caba4", g_5 = "#899891",
+            g_6 = "#697770", g_7 = "#495750", bg = "#0e1411", bg_active = "#1c2420", line_nr = "#9faea7",
+        },
     }),
     -- Atomic Heart (the Twins): Soviet red, gold, chrome over violet-black
     -- (assets/atomic-heart.png, assets/src/atomic_heart.py)
@@ -152,6 +166,12 @@ M.themes = {
         split         = "#6b1f2a",
         active_tab    = "#dcdbda", -- chrome
         shimmer       = { "#c8283c", "#e0b562" }, -- red catching gold
+        -- ashen's grays tinted toward the red star (same OKLab lightness, chroma 0.02);
+        -- shared with nvim's palette (g_*)
+        grays = {
+            g_1 = "#eee2e1", g_2 = "#dfd2d1", g_3 = "#c0b0af", g_4 = "#b4a3a2", g_5 = "#a0908f",
+            g_6 = "#7f6f6e", g_7 = "#5e4f4e", bg = "#161010", bg_active = "#291f1f", line_nr = "#b7a6a5",
+        },
     }),
     -- The Illusive Man before his star (Mass Effect 2): Paragon blue, ice,
     -- the ember of his cigarette (assets/illusive-man.png,
@@ -170,6 +190,12 @@ M.themes = {
         split         = "#2e476c",
         active_tab    = "#cbdbfe",
         shimmer       = { "#4a9fe0", "#cbdbfe" }, -- blue flaring white
+        -- ashen's grays tinted toward Paragon blue (same OKLab lightness, chroma 0.02);
+        -- shared with nvim's palette (g_*)
+        grays = {
+            g_1 = "#dee6ee", g_2 = "#cdd7df", g_3 = "#aab6c0", g_4 = "#9da9b3", g_5 = "#8a96a0",
+            g_6 = "#6a757e", g_7 = "#4a555e", bg = "#0e1316", bg_active = "#1c2329", line_nr = "#a0acb6",
+        },
     }),
     -- SMT V: Vengeance, Taito: ultramarine and shafts of cyan light
     -- (assets/smtvv-taito.png, assets/src/picture.py)
@@ -186,6 +212,12 @@ M.themes = {
         split         = "#3a4fb6",
         active_tab    = "#e0f6f9",
         shimmer       = { "#6f8cff", "#e0f6f9" }, -- blue lit white
+        -- ashen's grays tinted toward the ultramarine (same OKLab lightness, chroma 0.02);
+        -- shared with nvim's palette (g_*)
+        grays = {
+            g_1 = "#e2e5ee", g_2 = "#d1d5df", g_3 = "#afb4c1", g_4 = "#a2a7b4", g_5 = "#8f94a1",
+            g_6 = "#6f737f", g_7 = "#4f535f", bg = "#101217", bg_active = "#1f2229", line_nr = "#a5aab7",
+        },
     }),
     -- Persona 4, the Midnight Channel studio: TV yellow, stage amber
     -- (assets/persona4-tv.png, assets/src/picture.py)
@@ -203,6 +235,12 @@ M.themes = {
         split         = "#76561d",
         active_tab    = "#fbf250",
         shimmer       = { "#d6a92c", "#fbf250" }, -- gold flaring yellow
+        -- ashen's grays tinted toward Persona 4 yellow (same OKLab lightness, chroma 0.02);
+        -- shared with nvim's palette (g_*)
+        grays = {
+            g_1 = "#e9e5dc", g_2 = "#d9d5ca", g_3 = "#b9b4a7", g_4 = "#aca799", g_5 = "#999487",
+            g_6 = "#787366", g_7 = "#575347", bg = "#14120d", bg_active = "#25221a", line_nr = "#afaa9c",
+        },
     }),
     -- Cyberpunk 2077: Phantom Liberty, Songbird before the red sphere: neon
     -- red, netrunner cyan (assets/cyberpunk-songbird.png, assets/src/picture.py)
@@ -220,6 +258,12 @@ M.themes = {
         split         = "#982129",
         active_tab    = "#5fc8d8",
         shimmer       = { "#e62e4b", "#5fc8d8" }, -- red glitching to cyan
+        -- ashen's grays tinted toward the neon red (same OKLab lightness, chroma 0.02);
+        -- shared with nvim's palette (g_*)
+        grays = {
+            g_1 = "#eee2e2", g_2 = "#dfd1d1", g_3 = "#c0b0af", g_4 = "#b4a2a2", g_5 = "#a0908f",
+            g_6 = "#7f6f6e", g_7 = "#5e4f4f", bg = "#161010", bg_active = "#291f1f", line_nr = "#b7a5a5",
+        },
     }),
     -- LEGACY: gruvbox dark over a Silent Hunter 5 screenshot. To move into kazRC
     -- as a user theme (the test case for custom themes) and leave the defaults.
