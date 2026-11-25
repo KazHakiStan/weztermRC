@@ -24,6 +24,9 @@ config.leader = {
     mods = settings.leader.mods,
     timeout_milliseconds = settings.leader.timeout_ms,
 }
+-- keys by their place (US layout), not the letter they type: LEADER t, [ ]
+-- and the rest work with the Russian layout on too
+config.key_map_preference = "Physical"
 
 -- font
 config.font_size = settings.font.size
@@ -61,11 +64,14 @@ end
 
 bind("Tabs", keymaps.remaps())
 
+-- pinned tab (LEADER ; and :); tab switching below skips it
+local pinned = require("pinned")
+bind("Tabs", pinned.keys())
 for i = 0, 9 do
     bind("Tabs", { {
         key = tostring(i),
         mods = "LEADER",
-        action = wezterm.action.ActivateTab(i),
+        action = pinned.activate(i),
     } })
 end
 help.note("Tabs", "LEADER 0-9", "Go to tab N")
@@ -91,6 +97,10 @@ bind("Settings", { {
 } })
 bind("Settings", require("updates").keys())
 bind("Projects", require("projects").keys())
+-- your extensions (~/.config/kazrc/wezterm.lua: extensions = { ... })
+for _, e in ipairs(require("extensions").keys()) do
+    bind(e.section, e.specs)
+end
 config.key_tables = keymaps.key_tables()
 
 -- theme: rebuilt from state files on every config load.

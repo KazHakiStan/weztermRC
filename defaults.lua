@@ -106,6 +106,10 @@ return {
         clock = "%H:%M", -- strftime format; "" hides the clock
     },
 
+    -- Lua files of your own that add keys, modes and bar items (the format is
+    -- at the top of extensions.lua), e.g. { "~/.config/kazrc/music.lua" }
+    extensions = {},
+
     updates = {
         -- "release": new versions of this config (tags), "latest": every
         -- commit on master, "off": no checks. The bar shows a new one,

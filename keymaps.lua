@@ -1,6 +1,7 @@
 local wezterm = require("wezterm")
 
 local state_store = require("state")
+local pinned = require("pinned")
 
 local M = {}
 
@@ -117,10 +118,11 @@ function M.remaps()
     return {
         { mods = "LEADER", key = "c", section = "Tabs", desc = "New tab",
           action = act.SpawnTab("CurrentPaneDomain") },
+        -- through pinned.lua: switching and moving skip the pinned tab
         { mods = "LEADER", key = "b", section = "Tabs", desc = "Previous tab",
-          action = act.ActivateTabRelative(-1) },
+          action = pinned.relative(-1) },
         { mods = "LEADER", key = "n", section = "Tabs", desc = "Next tab",
-          action = act.ActivateTabRelative(1) },
+          action = pinned.relative(1) },
         { mods = "LEADER", key = "m", section = "Tabs",
           desc = "Move mode: b / n move tab, 0-9 put it at N, Esc / Enter / any other key exits",
           action = act.ActivateKeyTable({
@@ -166,15 +168,15 @@ end
 function M.key_tables()
     local act = wezterm.action
     local move = {
-        { key = "b", action = act.MoveTabRelative(-1) },
-        { key = "n", action = act.MoveTabRelative(1) },
+        { key = "b", action = pinned.move_relative(-1) },
+        { key = "n", action = pinned.move_relative(1) },
         { key = "Escape", action = "PopKeyTable" },
         { key = "Enter", action = "PopKeyTable" },
     }
     for i = 0, 9 do
-        table.insert(move, { key = tostring(i), action = act.MoveTab(i) })
+        table.insert(move, { key = tostring(i), action = pinned.move_to(i) })
     end
-    return { move_tab = move }
+    return require("extensions").key_tables({ move_tab = move })
 end
 
 return M

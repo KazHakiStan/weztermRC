@@ -1,5 +1,6 @@
--- Bottom bar: custom tab titles, activity line (left), cwd + git branch + clock
--- (right), and a new version of this config when there is one (updates.lua).
+-- Bottom bar: custom tab titles, activity line (left), extensions' items, the
+-- pinned tab (pinned.lua), cwd + git branch + clock (right), and a new version
+-- of this config when there is one (updates.lua).
 --   LEADER ,   rename tab (empty input = automatic name)
 --   LEADER s   activity element: full -> compact (no time) -> off
 --   LEADER w   next activity word now (restarts its timer, status.word_seconds)
@@ -14,6 +15,8 @@ local M = {}
 local kazrc = require("kazrc")
 local S = kazrc.get()
 local updates = require("updates")
+local pinned = require("pinned")
+local extensions = require("extensions")
 
 local SHIMMER_WIDTH = S.animation.shimmer_width -- half-width of the band in characters
 
@@ -204,6 +207,23 @@ local function url_path(u)
     return (p:gsub("^/(%a:)", "%1")) -- "/C:/Users" -> "C:/Users"
 end
 
+-- a tab's name: the one you gave it (LEADER ,), else the program in it, or
+-- the folder for a shell. The pinned tab is a MuxTab, the others TabInformation.
+local function auto_name(proc, cwd, title)
+    if SHELLS[proc] or proc == "" then
+        return basename(url_path(cwd) or title)
+    end
+    return proc
+end
+
+local function mux_tab_name(tab)
+    local title = tab:get_title()
+    if title and title ~= "" then return title end
+    local pane = tab:active_pane()
+    local proc = basename(pane:get_foreground_process_name() or ""):gsub("%.exe$", "")
+    return auto_name(proc, pane:get_current_working_dir(), pane:get_title())
+end
+
 ---------------------------------------------------------------- directory
 
 local function home_relative(p)
@@ -311,16 +331,16 @@ function M.apply(config, theme, state)
     config.status_update_interval = animate and FAST_MS or SLOW_MS
     config.tab_max_width = S.window.tab_max_width
 
-    -- tabs: "▌0 name " (2 cells of decoration around the label)
-    wezterm.on("format-tab-title", function(tab, _tabs, _panes, _cfg, hover, max_width)
+    extensions.set_ui(ui)
+
+    -- tabs: "▌0 name " (2 cells of decoration around the label); the pinned
+    -- tab is drawn on the right instead and left out of the numbers
+    wezterm.on("format-tab-title", function(tab, tabs, _panes, _cfg, hover, max_width)
+        if pinned.is_pinned(tab.tab_id) then return "" end
         local pane = tab.active_pane
-        local proc = process_name(pane)
-        local auto = proc
-        if SHELLS[proc] or proc == "" then
-            auto = basename(url_path(pane.current_working_dir) or pane.title)
-        end
-        local name = (tab.tab_title and tab.tab_title ~= "") and tab.tab_title or auto
-        local label = fit(string.format("%d %s", tab.tab_index, name), max_width - 2)
+        local name = (tab.tab_title and tab.tab_title ~= "") and tab.tab_title
+            or auto_name(process_name(pane), pane.current_working_dir, pane.title)
+        local label = fit(string.format("%d %s", pinned.display_index(tab, tabs), name), max_width - 2)
 
         if tab.is_active then
             -- the active tab shimmers like the activity word
@@ -353,6 +373,8 @@ function M.apply(config, theme, state)
             badge, badge_bg = "LEADER", ui.accent
         elseif window:active_key_table() == "move_tab" then
             badge, badge_bg = "MOVE  b n 0-9", ui.glow
+        elseif extensions.mode(window:active_key_table()) then
+            badge, badge_bg = extensions.mode(window:active_key_table()), ui.glow
         end
         -- a broken or mistyped ~/.config/kazrc/wezterm.lua says so here
         local trouble = kazrc.problem()
@@ -405,6 +427,33 @@ function M.apply(config, theme, state)
                 "ResetAttributes", { Background = { Color = ui.bg } },
                 { Foreground = { Color = ui.muted } }, { Text = "LEADER u  " },
             }) do right[#right + 1] = it end
+        end
+        -- extensions' items (kazrc), then the pinned tab: lit like the
+        -- active tab when it is the one you are on
+        for _, it in ipairs(extensions.status(window, pane)) do right[#right + 1] = it end
+        local pin = pinned.tab()
+        if pin then
+            local label = fit(mux_tab_name(pin), 20)
+            local items
+            if pin:tab_id() == window:active_tab():tab_id() then
+                items = {
+                    { Background = { Color = ui.bg_active } },
+                    { Foreground = { Color = ui.accent } }, { Text = "▌" .. nf("md_pin") .. " " },
+                    { Attribute = { Intensity = "Bold" } },
+                }
+                for _, it in ipairs(shimmer(label, ui.bright, ui.shimmer[2], k, animate)) do
+                    items[#items + 1] = it
+                end
+                items[#items + 1] = { Text = " " }
+            else
+                items = {
+                    { Foreground = { Color = ui.muted } }, { Text = nf("md_pin_outline") .. " " .. label },
+                }
+            end
+            for _, it in ipairs(items) do right[#right + 1] = it end
+            for _, it in ipairs({ "ResetAttributes", { Background = { Color = ui.bg } }, { Text = "  " } }) do
+                right[#right + 1] = it
+            end
         end
         for _, it in ipairs({
             { Foreground = { Color = ui.muted } }, { Text = nf("md_folder_outline") .. " " },
